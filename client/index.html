@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Trade</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/deepstream.io-client-js/2.1.1/deepstream.min.js"></script>
+  </head>
+  <body>
+    <h1>TRANSACTIONS</h1>
+    <br>
+    <span>Buy Price:</span><input type="text" id="limit" />
+    <br>
+    <span>Buy Amount:</span><input type="text" id="buy" name="buy" />
+    <br>
+    <input type="button" id="buyAction" name="buy" value="Buy!" />
+    <br>
+    <span>Sell Price:</span><input type="text" id="sellPrice" />
+    <br>
+    <span>Sell Amount:</span><input type="text" id="sell" name="sell" />
+    <br>
+    <input type="button" name="sell" id="sellAction" value="Sell">
+    <!-- <div id="showBuy"></div>
+    <div id="showSell"></div> -->
+    <script type="text/javascript">
+      //js goes here
+      var client = deepstream('localhost:6020').login();
+      // var record = client.record.getRecord('hello');
+      // console.log(record);
+
+      // var input = document.querySelector('input');
+      var buyAmount = document.getElementById('buy');
+      var sellAmount = document.getElementById('sell');
+      var buyPrice = document.getElementById('limit');
+      var sellPrice = document.getElementById('sellPrice');
+      var buy = document.getElementById('buyAction');
+      var sell = document.getElementById('sellAction');
+
+
+      //  client.event.subscribe('news/sports', eventCallback);
+
+
+      // client.rpc.provide( 'add-two-numbers', ( data, response ) => {
+      //     response.send( data.numA + data.numB );
+      // });
+
+      // buy.value = 0;
+      // sell.value = 0;
+
+      // input.onkeyup = (function() {
+      //   record.set('firstname', input.value)
+      // });
+
+      buy.onclick = (function() {
+        var buyobj = {};
+        // buy.value++;
+        buyobj.amount = buyAmount.value;
+        buyobj.price = buyPrice.value;
+        client.event.emit('transaction/buy', buyobj);
+        console.log(buyobj);
+        // showBuy.value = buy.value;
+        // record.set('buy', buy.value)
+      });
+
+      sell.onclick = (function() {
+        var sellobj = {};
+        // sell.value++;
+        sellobj.amount = sellAmount.value;
+        sellobj.price = sellPrice.value;
+        client.event.emit('transaction/sell', sellobj );
+        console.log(sellobj);
+        // showSell.value = sell.value;
+        // record.set('sell', sell.value)
+      });
+
+      // record.subscribe('firstname', function(value) {
+      //   input.value = value
+      // });
+
+      // record.subscribe('buy', function(value) {
+      //   buy.value = value
+      // });
+      //
+      // record.subscribe('sell', function(value) {
+      //   sell.value = value
+      // });
+
+      // client.rpc.make( 'add-two-numbers', { numA: 7, numB: 13 }, ( err, result ) => {
+      //   console.log(result);
+      //   // result == 20;
+      // });
+      console.log('open list', client.record.getList('open'));
+
+
+    </script>
+  </body>
+</html>

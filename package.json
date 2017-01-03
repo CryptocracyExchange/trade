@@ -1,0 +1,19 @@
+{
+  "name": "trade",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "deepstream.io-client-js": "^2.1.1",
+    "express": "^4.14.0",
+    "lodash": "^4.17.4"
+  },
+  "devDependencies": {
+    "nodemon": "^1.11.0"
+  }
+}
