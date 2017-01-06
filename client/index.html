@@ -4,6 +4,8 @@
     <meta charset="utf-8">
     <title>Trade</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/deepstream.io-client-js/2.1.1/deepstream.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.4.1/react.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.4.1/react-dom.min.js"></script>
   </head>
   <body>
     <h1>TRANSACTIONS</h1>
@@ -19,8 +21,8 @@
     <span>Sell Amount:</span><input type="text" id="sell" name="sell" />
     <br>
     <input type="button" name="sell" id="sellAction" value="Sell">
-    <!-- <div id="showBuy"></div>
-    <div id="showSell"></div> -->
+    <br>
+    <div id="app"></div>
     <script type="text/javascript">
       //js goes here
       var client = deepstream('localhost:6020').login();
@@ -55,7 +57,7 @@
         // buy.value++;
         buyobj.amount = buyAmount.value;
         buyobj.price = buyPrice.value;
-        client.event.emit('transaction/buy', buyobj);
+        client.event.emit('transactionBuy', buyobj);
         console.log(buyobj);
         // showBuy.value = buy.value;
         // record.set('buy', buy.value)
@@ -66,7 +68,7 @@
         // sell.value++;
         sellobj.amount = sellAmount.value;
         sellobj.price = sellPrice.value;
-        client.event.emit('transaction/sell', sellobj );
+        client.event.emit('transactionSell', sellobj );
         console.log(sellobj);
         // showSell.value = sell.value;
         // record.set('sell', sell.value)
