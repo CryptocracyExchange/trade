@@ -12,5 +12,5 @@ console.log(`Listening on ${port}`);
 // client.rpc.provide( 'add-two-numbers', ( data, response ) => {
 //     response.send( data.numA + data.numB );
 // });
-events.buy();
-events.sell();
+events.initTransactionBuy();
+events.initTransactionSell();

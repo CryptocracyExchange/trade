@@ -57,6 +57,8 @@
         // buy.value++;
         buyobj.amount = buyAmount.value;
         buyobj.price = buyPrice.value;
+        buyobj.userID = 'aa';
+        buyobj.currency = 'BTC';
         client.event.emit('transactionBuy', buyobj);
         console.log(buyobj);
         // showBuy.value = buy.value;
@@ -68,6 +70,8 @@
         // sell.value++;
         sellobj.amount = sellAmount.value;
         sellobj.price = sellPrice.value;
+        sellobj.userID = 'aa';
+        sellobj.currency = 'BTC';
         client.event.emit('transactionSell', sellobj );
         console.log(sellobj);
         // showSell.value = sell.value;

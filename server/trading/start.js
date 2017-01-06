@@ -14,13 +14,6 @@ let openSell = connect.record.getList('openSell');
 // Sell Transaction History
 let histSell = connect.record.getList('histSell');
 
-
-/** test user **/
-// let options = {
-//   userID: 'aa',
-//   currency: 'BTC'
-// };
-
 /** Create test open sell list **/
 // openSell.whenReady((newList) => {
 //   for (let h = 0; h < 2; h++) {
@@ -69,15 +62,42 @@ let histSell = connect.record.getList('histSell');
 // });
 
 // Balancer Listener
-const initTransaction = () => {
-  connect.event.subscribe('returnBalance', (data) => {
-    return amount > data.balance ? buy() : false;
+const initTransactionBuy = () => {
+  connect.event.subscribe('transactionBuy', (data) => {
+    let options = {
+      userID: data.userID,
+      currency: data.currency
+    };
+    connect.event.emit('checkBalance', options);
+    connect.event.subscribe('returnBalance', (balance) => {
+      if ((balance.userID === data.userID) && (balance.amount > data.amount)) {
+        buy(data);
+      } else {
+        console.log('NOT ENOUGH MONEY!');
+      }
+    });
+  });
+}
+
+const initTransactionSell = () => {
+  connect.event.subscribe('transactionSell', (data) => {
+    let options = {
+      userID: data.userID,
+      currency: data.currency
+    };
+    connect.event.emit('checkBalance', options);
+    connect.event.subscribe('returnBalance', (balance) => {
+      if ((balance.userID === data.userID) && (balance.amount > data.amount)) {
+        sell(data);
+      } else {
+        console.log('NOT ENOUGH MONEY!');
+      }
+    });
   });
 }
 
 // Define the buy method
-const buy = () => {
-  connect.event.subscribe('transactionBuy', (data) => {
+const buy = (data) => {
     // Creates unique ID
     let unique = connect.getUid();
     // Creates new buy record
@@ -265,7 +285,6 @@ const buy = () => {
         }
       });
     });
-  });
 };
 
 // Define the sell method
@@ -530,7 +549,6 @@ histSell.whenReady((list) => {
 });
 
 module.exports = {
-  buy: buy,
-  sell: sell,
-  initTransaction: initTransaction
+  initTransactionBuy: initTransactionBuy,
+  initTransactionSell: initTransactionSell
 }
