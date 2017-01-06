@@ -70,7 +70,8 @@ const initTransactionBuy = () => {
     };
     connect.event.emit('checkBalance', options);
     connect.event.subscribe('returnBalance', (balance) => {
-      if ((balance.userID === data.userID) && (balance.amount > data.amount)) {
+      console.log('bal', balance, 'data', data)
+      if (balance.balance >= data.amount * data.price) {
         buy(data);
       } else {
         console.log('NOT ENOUGH MONEY!');
@@ -85,9 +86,12 @@ const initTransactionSell = () => {
       userID: data.userID,
       currency: data.currency
     };
+    console.log('sell options', data);
     connect.event.emit('checkBalance', options);
     connect.event.subscribe('returnBalance', (balance) => {
-      if ((balance.userID === data.userID) && (balance.amount > data.amount)) {
+        console.log('bal', balance.balance, 'amount', data.amount * data.price);
+      if (balance.balance >= data.amount * data.price) {
+        console.log('fire', data);
         sell(data);
       } else {
         console.log('NOT ENOUGH MONEY!');
@@ -98,273 +102,152 @@ const initTransactionSell = () => {
 
 // Define the buy method
 const buy = (data) => {
-    // Creates unique ID
-    let unique = connect.getUid();
-    // Creates new buy record
-    const buy = connect.record.getRecord(`transaction/buy/open/${unique}`);
-    buy.whenReady((record) => {
-      record.set({
-        buy: {
-          amount: +data.amount,
-          price: +data.price
-        }
-      }, err => {
-        if (err) {
-          console.log('Buy record set with error:', err)
-        } else {
-          console.log('Buy record set without error');
-          // Push record into open buy transactions
-          openBuy.whenReady((list) => {
-            list.addEntry(`transaction/buy/open/${unique}`);
-            let entries = list.getEntries();
-            let tempArr = [];
+  // Creates unique ID
+  let unique = connect.getUid();
+  // Creates new buy record
+  const buy = connect.record.getRecord(`transaction/buy/open/${unique}`);
+  buy.whenReady((record) => {
+    record.set({
+      buy: {
+        amount: +data.amount,
+        price: +data.price
+      }
+    }, err => {
+      if (err) {
+        console.log('Buy record set with error:', err)
+      } else {
+        console.log('Buy record set without error');
+        // Push record into open buy transactions
+        openBuy.whenReady((list) => {
+          list.addEntry(`transaction/buy/open/${unique}`);
+          let entries = list.getEntries();
+          let tempArr = [];
 
-            for (let i = 0; i < entries.length; i++) {
-              connect.record.getRecord(entries[i]).whenReady((record) => {
-                let buying = record.get('buy');
-                buying.name = record.name;
-                tempArr.push(buying);
-              });
-            }
-
-            tempArr = _.sortBy(tempArr, [function(rec){ return +rec.price; }]);
-            _.forEach(entries, (entry) => {
-              list.removeEntry(entry);
+          for (let i = 0; i < entries.length; i++) {
+            connect.record.getRecord(entries[i]).whenReady((record) => {
+              let buying = record.get('buy');
+              buying.name = record.name;
+              tempArr.push(buying);
             });
+          }
 
-            _.forEach(tempArr, (rec) => {
-              list.addEntry(rec.name);
-            });
-
-            let entres = list.getEntries();
-            for (let i = 0; i < entres.length; i++) {
-              connect.record.getRecord(entres[i]).whenReady((reco) => {
-                let pr = reco.get('buy');
-              });
-            }
+          tempArr = _.sortBy(tempArr, [function(rec){ return +rec.price; }]);
+          _.forEach(entries, (entry) => {
+            list.removeEntry(entry);
           });
 
-          // Check sell orders to fulfill open buy order
-          openSell.whenReady((sellList) => {
-            let buyOrders = sellList.getEntries();
-            var diff, newSellRecord, noDuplicate = true;
-            for (let n = 0; n < buyOrders.length; n++) {
-              let newBuyHist = connect.record.getRecord(`transaction/buy/history/${connect.getUid()}`);
-              let newSellHist = connect.record.getRecord(`transaction/sell/history/${connect.getUid()}`);
-              connect.record.getRecord(buyOrders[n]).whenReady((sellRecord) => {
-                newSellRecord = sellRecord;
-                histBuy.whenReady((histBuyList) => {
-                  openBuy.whenReady((buyList) => {
-                    histSell.whenReady((histSellList) => {
-                      buy.whenReady((buyRecord) => {
-                        // let amount = buyRecord.get('buy.amount');
-                        // let pricing = buyRecord.get('buy.price');
-                        newBuyHist.whenReady((newHistBuyRecord) => {
-                          newSellHist.whenReady((newHistSellRecord) => {
-                            if (sellRecord.get('sell') && sellRecord.get('sell.amount') && (sellRecord.get('sell.price') <= buyRecord.get('buy.price')) && noDuplicate) {
-                              if ((sellRecord.get('sell.amount') == buyRecord.get('buy.amount')) && noDuplicate) {
-                                // Supply == Demand
-                                console.log('sell amount = buy amount');
-                                buyRecord.set('buy.amount', buyRecord.get('buy.amount'));
-                                sellRecord.set('sell.amount', buyRecord.get('buy.amount'));
+          _.forEach(tempArr, (rec) => {
+            list.addEntry(rec.name);
+          });
+
+          let entres = list.getEntries();
+          for (let i = 0; i < entres.length; i++) {
+            connect.record.getRecord(entres[i]).whenReady((reco) => {
+              let pr = reco.get('buy');
+            });
+          }
+        });
+
+        // Check sell orders to fulfill open buy order
+        openSell.whenReady((sellList) => {
+          let buyOrders = sellList.getEntries();
+          var diff, newSellRecord, noDuplicate = true;
+          for (let n = 0; n < buyOrders.length; n++) {
+            let newBuyHist = connect.record.getRecord(`transaction/buy/history/${connect.getUid()}`);
+            let newSellHist = connect.record.getRecord(`transaction/sell/history/${connect.getUid()}`);
+            connect.record.getRecord(buyOrders[n]).whenReady((sellRecord) => {
+              newSellRecord = sellRecord;
+              histBuy.whenReady((histBuyList) => {
+                openBuy.whenReady((buyList) => {
+                  histSell.whenReady((histSellList) => {
+                    buy.whenReady((buyRecord) => {
+                      // let amount = buyRecord.get('buy.amount');
+                      // let pricing = buyRecord.get('buy.price');
+                      newBuyHist.whenReady((newHistBuyRecord) => {
+                        newSellHist.whenReady((newHistSellRecord) => {
+                          if (sellRecord.get('sell') && sellRecord.get('sell.amount') && (sellRecord.get('sell.price') <= buyRecord.get('buy.price')) && noDuplicate) {
+                            if ((sellRecord.get('sell.amount') == buyRecord.get('buy.amount')) && noDuplicate) {
+                              // Supply == Demand
+                              console.log('sell amount = buy amount');
+                              buyRecord.set('buy.amount', buyRecord.get('buy.amount'));
+                              sellRecord.set('sell.amount', buyRecord.get('buy.amount'));
+                              newHistBuyRecord.set({
+                                hist: {
+                                  price: sellRecord.get('sell.price'),
+                                  bought: buyRecord.get('buy.amount'),
+                                  from: sellRecord.name,
+                                  originalId: buyRecord.name
+                                }
+                              }, err => {
+                                if (err) {
+                                  console.log('buy', err);
+                                }
+                              });
+                              newHistSellRecord.set({
+                                hist: {
+                                  price: sellRecord.get('sell.price'),
+                                  sold: sellRecord.get('sell.amount'),
+                                  to: buyRecord.name,
+                                  originalId: sellRecord.name
+                                }
+                              }, err => {
+                                if (err) {
+                                  console.log('sell', err);
+                                }
+                              });
+                              sellList.removeEntry(sellRecord.name);
+                              buyList.removeEntry(buyRecord.name);
+                              histSellList.addEntry(newHistSellRecord.name);
+                              histBuyList.addEntry(newHistBuyRecord.name);
+                              noDuplicate = false;
+                            } else if (sellRecord.get('sell.amount') < buyRecord.get('buy.amount')) {
+                              // Supply < Demand
+                              diff = buyRecord.get('buy.amount') - sellRecord.get('sell.amount');
+                              if (diff > 0) {
+                                console.log('if amount supply < demand && diff > 0', diff);
+                                console.log('buyrecord: ', buyRecord.name, buyRecord.get('buy'));
+                                console.log('sellrecord: ', sellRecord.name, sellRecord.get('sell'));
+                                // Setting new history records
                                 newHistBuyRecord.set({
                                   hist: {
-                                    price: sellRecord.get('sell.price'),
-                                    bought: buyRecord.get('buy.amount'),
-                                    from: sellRecord.name,
-                                    originalId: buyRecord.name
+                                   price: sellRecord.get('sell.price'),
+                                   bought: sellRecord.get('sell.amount'),
+                                   from: sellRecord.name,
+                                   originalId: buyRecord.name
                                   }
                                 }, err => {
                                   if (err) {
                                     console.log('buy', err);
+                                  } else {
+                                    console.log('setting new buy', newHistBuyRecord.name);
+                                    histBuyList.addEntry(newHistBuyRecord.name);
                                   }
                                 });
                                 newHistSellRecord.set({
                                   hist: {
-                                    price: sellRecord.get('sell.price'),
-                                    sold: sellRecord.get('sell.amount'),
-                                    to: buyRecord.name,
-                                    originalId: sellRecord.name
+                                   price: sellRecord.get('sell.price'),
+                                   sold: sellRecord.get('sell.amount'),
+                                   to: buyRecord.name,
+                                   originalId: sellRecord.name
                                   }
                                 }, err => {
                                   if (err) {
                                     console.log('sell', err);
+                                  } else {
+                                    histSellList.addEntry(newHistSellRecord.name);
                                   }
                                 });
                                 sellList.removeEntry(sellRecord.name);
-                                buyList.removeEntry(buyRecord.name);
-                                histSellList.addEntry(newHistSellRecord.name);
-                                histBuyList.addEntry(newHistBuyRecord.name);
-                                noDuplicate = false;
-                              } else if (sellRecord.get('sell.amount') < buyRecord.get('buy.amount')) {
-                                // Supply < Demand
-                                diff = buyRecord.get('buy.amount') - sellRecord.get('sell.amount');
-                                if (diff > 0) {
-                                  console.log('if amount supply < demand && diff > 0', diff);
-                                  console.log('buyrecord: ', buyRecord.name, buyRecord.get('buy'));
-                                  console.log('sellrecord: ', sellRecord.name, sellRecord.get('sell'));
-                                  // Setting new history records
-                                  newHistBuyRecord.set({
-                                    hist: {
-                                     price: sellRecord.get('sell.price'),
-                                     bought: sellRecord.get('sell.amount'),
-                                     from: sellRecord.name,
-                                     originalId: buyRecord.name
-                                    }
-                                  }, err => {
-                                    if (err) {
-                                      console.log('buy', err);
-                                    } else {
-                                      console.log('setting new buy', newHistBuyRecord.name);
-                                      histBuyList.addEntry(newHistBuyRecord.name);
-                                    }
-                                  });
-                                  newHistSellRecord.set({
-                                    hist: {
-                                     price: sellRecord.get('sell.price'),
-                                     sold: sellRecord.get('sell.amount'),
-                                     to: buyRecord.name,
-                                     originalId: sellRecord.name
-                                    }
-                                  }, err => {
-                                    if (err) {
-                                      console.log('sell', err);
-                                    } else {
-                                      histSellList.addEntry(newHistSellRecord.name);
-                                    }
-                                  });
-                                  sellList.removeEntry(sellRecord.name);
-                                  buyRecord.set('buy.amount', diff);
-                                }
-                              } else if (sellRecord.get('sell.amount') > buyRecord.get('buy.amount')){
-                                // Supply > Demand
-                                diff = sellRecord.get('sell.amount') - buyRecord.get('buy.amount');
-                                if (diff > 0) {
-                                  console.log('if amount supply > demand && diff > 0', diff);
-                                  newHistBuyRecord.set({
-                                    hist: {
-                                      price: sellRecord.get('sell.price'),
-                                      bought: buyRecord.get('buy.amount'),
-                                      from: sellRecord.name,
-                                      originalId: buyRecord.name
-                                    }
-                                  }, err => {
-                                    if (err) {
-                                      console.log('buy', err);
-                                    }
-                                  });
-                                  newHistSellRecord.set({
-                                    hist: {
-                                      price: sellRecord.get('sell.price'),
-                                      sold: buyRecord.get('buy.amount'),
-                                      to: buyRecord.name,
-                                      originalId: sellRecord.name
-                                    }
-                                  }, err => {
-                                    if (err) {
-                                      console.log('sell', err);
-                                    }
-                                  });
-                                  // sellRecord.set('sell.amount', diff);
-                                  histSellList.addEntry(newHistSellRecord.name);
-                                  histBuyList.addEntry(newHistBuyRecord.name);
-                                  buyList.removeEntry(buyRecord.name);
-                                  sellRecord.set('sell.amount', diff);
-                                }
+                                buyRecord.set('buy.amount', diff);
                               }
-                            }
-                          });
-                        });
-                      });
-                    });
-                  });
-                });
-              });
-            }
-          });
-        }
-      });
-    });
-};
-
-// Define the sell method
-const sell = () => {
-  connect.event.subscribe('transactionSell', (data) => {
-    // Creates unique ID
-    let unique = connect.getUid();
-    // Creates a new sell record
-    const sell = connect.record.getRecord(`transaction/sell/open/${unique}`);
-    sell.whenReady((record) => {
-      record.set({
-        sell: {
-          amount: +data.amount,
-          price: +data.price,
-        }
-      }, err => {
-        if (err) {
-          console.log('Sell record set with error:', err)
-        } else {
-          console.log('Sell record set without error');
-          // Push record into open sell transactions
-          openSell.whenReady((list) => {
-            list.addEntry(`transaction/sell/open/${unique}`);
-            let entries = list.getEntries();
-
-            let tempArr2 = [];
-
-            for (let i = 0; i < entries.length; i++) {
-              connect.record.getRecord(entries[i]).whenReady((record) => {
-                let selling = record.get('sell');
-                selling.name = record.name;
-                tempArr2.push(selling);
-              });
-            }
-            tempArr2 = _.sortBy(tempArr2, [function(rec){ return +rec.price; }]);
-            _.forEach(entries, (entry) => {
-              list.removeEntry(entry);
-            });
-
-            _.forEach(tempArr2, (rec) => {
-              list.addEntry(rec.name);
-            });
-
-            let entres = list.getEntries();
-            console.log('list list', entres);
-            for (let i = 0; i < entres.length; i++) {
-              connect.record.getRecord(entres[i]).whenReady((reco) => {
-                let pr = reco.get('sell');
-                console.log('new list: ', pr, reco.name);
-              });
-            }
-          });
-          // Check buy orders to fulfill open sell order
-          openBuy.whenReady((buyList) => {
-            let buyOrders = buyList.getEntries();
-            var diff, noDuplicate = true, maxDemand = true;
-            for (let n = 0; n < buyOrders.length; n++) {
-              let newBuyHist = connect.record.getRecord(`transaction/buy/history/${connect.getUid()}`);
-              let newSellHist = connect.record.getRecord(`transaction/sell/history/${connect.getUid()}`);
-              connect.record.getRecord(buyOrders[n]).whenReady((buyRecord) => {
-                histBuy.whenReady((histBuyList) => {
-                  openSell.whenReady((sellList) => {
-                    histSell.whenReady((histSellList) => {
-                      sell.whenReady((sellRecord) => {
-                        newBuyHist.whenReady((newHistBuyRecord) => {
-                          newSellHist.whenReady((newHistSellRecord) => {
-                            if (sellRecord.get('sell') &&
-                                sellRecord.get('sell.amount') &&
-                                (sellRecord.get('sell.price') <= buyRecord.get('buy.price')) &&
-                                noDuplicate
-                                ) {
-                              console.log('pre if', sellRecord.get('sell.price'), buyRecord.get('buy.price'), (sellRecord.get('sell.price') <= buyRecord.get('buy.price')));
-                              if (buyRecord.get('buy.amount') == sellRecord.get('sell.amount')) {
-                                // Supply == Demand
-                                console.log('sell amount = buy amount');
-                                sellRecord.set('sell.amount', sellRecord.get('sell.amount'));
-                                buyRecord.set('buy.amount', buyRecord.get('buy.amount'));
+                            } else if (sellRecord.get('sell.amount') > buyRecord.get('buy.amount')){
+                              // Supply > Demand
+                              diff = sellRecord.get('sell.amount') - buyRecord.get('buy.amount');
+                              if (diff > 0) {
+                                console.log('if amount supply > demand && diff > 0', diff);
                                 newHistBuyRecord.set({
                                   hist: {
-                                    price: buyRecord.get('buy.price'),
+                                    price: sellRecord.get('sell.price'),
                                     bought: buyRecord.get('buy.amount'),
                                     from: sellRecord.name,
                                     originalId: buyRecord.name
@@ -376,7 +259,7 @@ const sell = () => {
                                 });
                                 newHistSellRecord.set({
                                   hist: {
-                                    price: buyRecord.get('buy.price'),
+                                    price: sellRecord.get('sell.price'),
                                     sold: buyRecord.get('buy.amount'),
                                     to: buyRecord.name,
                                     originalId: sellRecord.name
@@ -386,100 +269,219 @@ const sell = () => {
                                     console.log('sell', err);
                                   }
                                 });
-                                buyList.removeEntry(buyRecord.name);
-                                sellList.removeEntry(sellRecord.name);
+                                // sellRecord.set('sell.amount', diff);
                                 histSellList.addEntry(newHistSellRecord.name);
                                 histBuyList.addEntry(newHistBuyRecord.name);
-                                noDuplicate = false;
-                              } else if (buyRecord.get('buy.amount') < sellRecord.get('sell.amount')) {
-                                // Supply < Demand
-                                diff = sellRecord.get('sell.amount') - buyRecord.get('buy.amount');
-                                if (diff > 0) {
-                                  console.log('if amount supply < demand && diff > 0', diff);
-                                  console.log('sellrecord: ', sellRecord.name, sellRecord.get('sell'));
-                                  console.log('buyrecord: ', buyRecord.name, buyRecord.get('buy'));
-                                  // Setting new history records
-                                  newHistBuyRecord.set({
-                                    hist: {
-                                     price: buyRecord.get('buy.price'),
-                                     bought: buyRecord.get('buy.amount'),
-                                     from: sellRecord.name,
-                                     originalId: buyRecord.name
-                                    }
-                                  }, err => {
-                                    if (err) {
-                                      console.log('buy', err);
-                                    } else {
-                                      console.log('setting new buy', newHistBuyRecord.name);
-                                      histBuyList.addEntry(newHistBuyRecord.name);
-                                    }
-                                  });
-                                  newHistSellRecord.set({
-                                    hist: {
-                                     price: buyRecord.get('buy.price'),
-                                     sold: buyRecord.get('buy.amount'),
-                                     to: buyRecord.name,
-                                     originalId: sellRecord.name
-                                    }
-                                  }, err => {
-                                    if (err) {
-                                      console.log('buy', err);
-                                    } else {
-                                      histSellList.addEntry(newHistSellRecord.name);
-                                    }
-                                  });
-                                  buyList.removeEntry(buyRecord.name);
-                                  sellRecord.set('sell.amount', diff);
-                                }
-                              } else if ((buyRecord.get('buy.amount') > sellRecord.get('sell.amount'))) {
-                                // Supply > Demand
-                                diff = buyRecord.get('buy.amount') - sellRecord.get('sell.amount');
-                                if (diff > 0) {
-                                  console.log('if amount supply > demand && diff > 0', diff);
-                                  newHistBuyRecord.set({
-                                    hist: {
-                                      price: buyRecord.get('buy.price'),
-                                      bought: sellRecord.get('sell.amount'),
-                                      from: sellRecord.name,
-                                      originalId: buyRecord.name
-                                    }
-                                  }, err => {
-                                    if (err) {
-                                      console.log('buy', err);
-                                    }
-                                  });
-                                  newHistSellRecord.set({
-                                    hist: {
-                                      price: buyRecord.get('buy.price'),
-                                      sold: sellRecord.get('sell.amount'),
-                                      to: buyRecord.name,
-                                      originalId: sellRecord.name
-                                    }
-                                  }, err => {
-                                    if (err) {
-                                      console.log('sell', err);
-                                    }
-                                  });
-                                  // buyRecord.set('sell.amount', diff);
-                                  histSellList.addEntry(newHistSellRecord.name);
-                                  histBuyList.addEntry(newHistBuyRecord.name);
-                                  sellList.removeEntry(sellRecord.name);
-                                  buyRecord.set('buy.amount', diff);
-                                  // maxDemand = false;
-                                }
+                                buyList.removeEntry(buyRecord.name);
+                                sellRecord.set('sell.amount', diff);
                               }
                             }
-                          });
+                          }
                         });
                       });
                     });
                   });
                 });
               });
-            }
+            });
+          }
+        });
+      }
+    });
+  });
+};
+
+// Define the sell method
+const sell = (data) => {
+  // Creates unique ID
+  let unique = connect.getUid();
+  // Creates a new sell record
+  const sell = connect.record.getRecord(`transaction/sell/open/${unique}`);
+  sell.whenReady((record) => {
+    record.set({
+      sell: {
+        amount: +data.amount,
+        price: +data.price,
+      }
+    }, err => {
+      if (err) {
+        console.log('Sell record set with error:', err)
+      } else {
+        console.log('Sell record set without error');
+        // Push record into open sell transactions
+        openSell.whenReady((list) => {
+          list.addEntry(`transaction/sell/open/${unique}`);
+          let entries = list.getEntries();
+
+          let tempArr2 = [];
+
+          for (let i = 0; i < entries.length; i++) {
+            connect.record.getRecord(entries[i]).whenReady((record) => {
+              let selling = record.get('sell');
+              selling.name = record.name;
+              tempArr2.push(selling);
+            });
+          }
+          tempArr2 = _.sortBy(tempArr2, [function(rec){ return +rec.price; }]);
+          _.forEach(entries, (entry) => {
+            list.removeEntry(entry);
           });
-        }
-      });
+
+          _.forEach(tempArr2, (rec) => {
+            list.addEntry(rec.name);
+          });
+
+          let entres = list.getEntries();
+          console.log('list list', entres);
+          for (let i = 0; i < entres.length; i++) {
+            connect.record.getRecord(entres[i]).whenReady((reco) => {
+              let pr = reco.get('sell');
+              console.log('new list: ', pr, reco.name);
+            });
+          }
+        });
+        // Check buy orders to fulfill open sell order
+        openBuy.whenReady((buyList) => {
+          let buyOrders = buyList.getEntries();
+          var diff, noDuplicate = true, maxDemand = true;
+          for (let n = 0; n < buyOrders.length; n++) {
+            let newBuyHist = connect.record.getRecord(`transaction/buy/history/${connect.getUid()}`);
+            let newSellHist = connect.record.getRecord(`transaction/sell/history/${connect.getUid()}`);
+            connect.record.getRecord(buyOrders[n]).whenReady((buyRecord) => {
+              histBuy.whenReady((histBuyList) => {
+                openSell.whenReady((sellList) => {
+                  histSell.whenReady((histSellList) => {
+                    sell.whenReady((sellRecord) => {
+                      newBuyHist.whenReady((newHistBuyRecord) => {
+                        newSellHist.whenReady((newHistSellRecord) => {
+                          if (sellRecord.get('sell') &&
+                              sellRecord.get('sell.amount') &&
+                              (sellRecord.get('sell.price') <= buyRecord.get('buy.price')) &&
+                              noDuplicate
+                              ) {
+                            console.log('pre if', sellRecord.get('sell.price'), buyRecord.get('buy.price'), (sellRecord.get('sell.price') <= buyRecord.get('buy.price')));
+                            if (buyRecord.get('buy.amount') == sellRecord.get('sell.amount')) {
+                              // Supply == Demand
+                              console.log('sell amount = buy amount');
+                              sellRecord.set('sell.amount', sellRecord.get('sell.amount'));
+                              buyRecord.set('buy.amount', buyRecord.get('buy.amount'));
+                              newHistBuyRecord.set({
+                                hist: {
+                                  price: buyRecord.get('buy.price'),
+                                  bought: buyRecord.get('buy.amount'),
+                                  from: sellRecord.name,
+                                  originalId: buyRecord.name
+                                }
+                              }, err => {
+                                if (err) {
+                                  console.log('buy', err);
+                                }
+                              });
+                              newHistSellRecord.set({
+                                hist: {
+                                  price: buyRecord.get('buy.price'),
+                                  sold: buyRecord.get('buy.amount'),
+                                  to: buyRecord.name,
+                                  originalId: sellRecord.name
+                                }
+                              }, err => {
+                                if (err) {
+                                  console.log('sell', err);
+                                }
+                              });
+                              buyList.removeEntry(buyRecord.name);
+                              sellList.removeEntry(sellRecord.name);
+                              histSellList.addEntry(newHistSellRecord.name);
+                              histBuyList.addEntry(newHistBuyRecord.name);
+                              noDuplicate = false;
+                            } else if (buyRecord.get('buy.amount') < sellRecord.get('sell.amount')) {
+                              // Supply < Demand
+                              diff = sellRecord.get('sell.amount') - buyRecord.get('buy.amount');
+                              if (diff > 0) {
+                                console.log('if amount supply < demand && diff > 0', diff);
+                                console.log('sellrecord: ', sellRecord.name, sellRecord.get('sell'));
+                                console.log('buyrecord: ', buyRecord.name, buyRecord.get('buy'));
+                                // Setting new history records
+                                newHistBuyRecord.set({
+                                  hist: {
+                                   price: buyRecord.get('buy.price'),
+                                   bought: buyRecord.get('buy.amount'),
+                                   from: sellRecord.name,
+                                   originalId: buyRecord.name
+                                  }
+                                }, err => {
+                                  if (err) {
+                                    console.log('buy', err);
+                                  } else {
+                                    console.log('setting new buy', newHistBuyRecord.name);
+                                    histBuyList.addEntry(newHistBuyRecord.name);
+                                  }
+                                });
+                                newHistSellRecord.set({
+                                  hist: {
+                                   price: buyRecord.get('buy.price'),
+                                   sold: buyRecord.get('buy.amount'),
+                                   to: buyRecord.name,
+                                   originalId: sellRecord.name
+                                  }
+                                }, err => {
+                                  if (err) {
+                                    console.log('buy', err);
+                                  } else {
+                                    histSellList.addEntry(newHistSellRecord.name);
+                                  }
+                                });
+                                buyList.removeEntry(buyRecord.name);
+                                sellRecord.set('sell.amount', diff);
+                              }
+                            } else if ((buyRecord.get('buy.amount') > sellRecord.get('sell.amount'))) {
+                              // Supply > Demand
+                              diff = buyRecord.get('buy.amount') - sellRecord.get('sell.amount');
+                              if (diff > 0) {
+                                console.log('if amount supply > demand && diff > 0', diff);
+                                newHistBuyRecord.set({
+                                  hist: {
+                                    price: buyRecord.get('buy.price'),
+                                    bought: sellRecord.get('sell.amount'),
+                                    from: sellRecord.name,
+                                    originalId: buyRecord.name
+                                  }
+                                }, err => {
+                                  if (err) {
+                                    console.log('buy', err);
+                                  }
+                                });
+                                newHistSellRecord.set({
+                                  hist: {
+                                    price: buyRecord.get('buy.price'),
+                                    sold: sellRecord.get('sell.amount'),
+                                    to: buyRecord.name,
+                                    originalId: sellRecord.name
+                                  }
+                                }, err => {
+                                  if (err) {
+                                    console.log('sell', err);
+                                  }
+                                });
+                                // buyRecord.set('sell.amount', diff);
+                                histSellList.addEntry(newHistSellRecord.name);
+                                histBuyList.addEntry(newHistBuyRecord.name);
+                                sellList.removeEntry(sellRecord.name);
+                                buyRecord.set('buy.amount', diff);
+                                // maxDemand = false;
+                              }
+                            }
+                          }
+                        });
+                      });
+                    });
+                  });
+                });
+              });
+            });
+          }
+        });
+      }
     });
   });
 };

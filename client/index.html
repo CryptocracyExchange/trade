@@ -10,12 +10,16 @@
   <body>
     <h1>TRANSACTIONS</h1>
     <br>
+    <span>userID:</span><input type="text" id="userID" />
+    <span>currency:</span><input type="text" id="currency" />
+    <br>
     <span>Buy Price:</span><input type="text" id="limit" />
     <br>
     <span>Buy Amount:</span><input type="text" id="buy" name="buy" />
     <br>
     <input type="button" id="buyAction" name="buy" value="Buy!" />
     <br>
+
     <span>Sell Price:</span><input type="text" id="sellPrice" />
     <br>
     <span>Sell Amount:</span><input type="text" id="sell" name="sell" />
@@ -31,6 +35,8 @@
 
       // var input = document.querySelector('input');
       var buyAmount = document.getElementById('buy');
+      var userID = document.getElementById('userID');
+      var currency = document.getElementById('currency');
       var sellAmount = document.getElementById('sell');
       var buyPrice = document.getElementById('limit');
       var sellPrice = document.getElementById('sellPrice');
@@ -57,8 +63,8 @@
         // buy.value++;
         buyobj.amount = buyAmount.value;
         buyobj.price = buyPrice.value;
-        buyobj.userID = 'aa';
-        buyobj.currency = 'BTC';
+        buyobj.userID = userID.value;
+        buyobj.currency = currency.value.toUpperCase();
         client.event.emit('transactionBuy', buyobj);
         console.log(buyobj);
         // showBuy.value = buy.value;
@@ -70,8 +76,8 @@
         // sell.value++;
         sellobj.amount = sellAmount.value;
         sellobj.price = sellPrice.value;
-        sellobj.userID = 'aa';
-        sellobj.currency = 'BTC';
+        sellobj.userID = userID.value;
+        sellobj.currency = currency.value.toUpperCase();
         client.event.emit('transactionSell', sellobj );
         console.log(sellobj);
         // showSell.value = sell.value;
