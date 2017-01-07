@@ -1,13 +1,16 @@
-const express = require('express');
-const app = express();
 const events = require('./trading/start.js');
-const path = require('path');
-const port = 3002;
 
-app.use(express.static(path.join(__dirname, '../client')));
+if (process.env.NODE_ENV === 'dev') {
+  const express = require('express');
+  const app = express();
+  const path = require('path');
+  const port = 3002;
 
-app.listen(port);
-console.log(`Listening on ${port}`);
+  app.use(express.static(path.join(__dirname, '../client')));
+
+  app.listen(port);
+  console.log(`Listening on ${port}`);
+}
 
 // client.rpc.provide( 'add-two-numbers', ( data, response ) => {
 //     response.send( data.numA + data.numB );

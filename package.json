@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon server/index.js",
+    "start-dev": "NODE_ENV=dev nodemon server/index.js",
+    "start-prod": "NODE_ENV=prod node server/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",

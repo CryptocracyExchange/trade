@@ -1,0 +1,25 @@
+machine:
+  node:
+    version: 7.2.0
+  services:
+    - docker
+
+dependencies:
+  override:
+    # - [ "type -p eslint" == "eslint not found" ] && npm install -g eslint
+    - npm install --dev
+
+# test:
+#   override:
+#     - mocha test --reporter mocha-junit-reporter:
+#         environment:
+#           MOCHA_FILE: $CIRCLE_TEST_REPORTS/junit/test-results.xml
+
+deployment:
+  hub:
+    branch: master
+    commands:
+      - docker info
+      - docker build --rm=false -t cryptocracy/trade .
+      - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
+      - docker push cryptocracy/trade
