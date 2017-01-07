@@ -1,4 +1,9 @@
+const path = require('path');
+const port = 3002;
+const deepstream = require('deepstream.io-client-js');
+const connect = deepstream('localhost:6020').login();
 const events = require('./trading/start.js');
+
 
 if (process.env.NODE_ENV === 'dev') {
   const express = require('express');
@@ -15,5 +20,5 @@ if (process.env.NODE_ENV === 'dev') {
 // client.rpc.provide( 'add-two-numbers', ( data, response ) => {
 //     response.send( data.numA + data.numB );
 // });
-events.initTransactionBuy();
-events.initTransactionSell();
+events.initTransactionBuy(connect);
+events.initTransactionSell(connect);
