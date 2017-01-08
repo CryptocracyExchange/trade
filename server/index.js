@@ -24,8 +24,5 @@ if (process.env.NODE_ENV === 'dev') {
   console.log(`Listening on ${port}`);
 }
 
-// client.rpc.provide( 'add-two-numbers', ( data, response ) => {
-//     response.send( data.numA + data.numB );
-// });
 events.initTransactionBuy(connect);
 events.initTransactionSell(connect);

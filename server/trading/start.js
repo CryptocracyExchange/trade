@@ -12,7 +12,6 @@ const _ = require('lodash');
 // // Transaction History
 // let transactionHistory = connect.record.getList('transactionHistory');
 
-
 /** Delete both transaction histories **/
 // transactionHistory.whenReady((hist1) => {
 //   hist1.delete();
@@ -23,7 +22,6 @@ const _ = require('lodash');
 // openSell.whenReady((hist1) => {
 //   hist1.delete();
 // });
-
 
 /** Create test open sell list **/
 // openSell.whenReady((newList) => {
@@ -83,7 +81,7 @@ const initTransactionBuy = (connect) => {
     connect.event.subscribe('returnBalance', (balance) => {
       console.log('bal', balance, 'data', data)
       if (balance.balance >= data.amount * data.price) {
-        buy(data);
+        buy(connect, data);
       } else {
         console.log('NOT ENOUGH MONEY!');
       }
@@ -104,7 +102,7 @@ const initTransactionSell = (connect) => {
         console.log('bal', balance.balance, 'amount', data.amount * data.price);
       if (balance.balance >= data.amount * data.price) {
         console.log('fire', data);
-        sell(data);
+        sell(connect, data);
       } else {
         console.log('NOT ENOUGH MONEY!');
       }
@@ -113,7 +111,7 @@ const initTransactionSell = (connect) => {
 }
 
 // Define the buy method
-const buy = (data) => {
+const buy = (connect, data) => {
   /** Create OPEN and TRANSACTION HISTORY lists **/
   // Open Buy Orders
   let openBuy = connect.record.getList('openBuy');
@@ -326,10 +324,57 @@ const buy = (data) => {
       }
     });
   });
+  /** Test **/
+  // Open Buy Orders
+  openBuy.whenReady((list) => {
+    // console.log('buy', list.getEntries());
+    var entries = list.getEntries();
+
+    for (var i = 0; i < entries.length; i++) {
+      connect.record.getRecord(entries[i]).whenReady((record) => {
+        // console.log('FJLEJLKJF', record);
+        let price = record.get('buy');
+        console.log('buy list: ', price, record.name);
+        // record.set('buy.amount', '423');
+      });
+    }
+  });
+
+  // Open Sell Orders
+  openSell.whenReady((list) => {
+    // console.log('sell', list.getEntries());
+    const entries = list.getEntries();
+    // var prices = [];
+    for (var i = 0; i < entries.length; i++) {
+      connect.record.getRecord(entries[i]).whenReady((record) => {
+        // console.log('FJLEJLKJF', record);
+        let price = record.get('sell');
+        console.log('sell list: ', price, record.name);
+        // console.log('sell price: ', record.get('price'));
+      });
+    }
+    // console.log('sell array: ', prices);
+  });
+
+  // Transaction History Buy Orders
+  transactionHistory.whenReady((list) => {
+    console.log('hist', list.getEntries());
+    var entries = list.getEntries();
+
+    for (var i = 0; i < entries.length; i++) {
+      connect.record.getRecord(entries[i]).whenReady((record) => {
+        // console.log('FJLEJLKJF', record);
+        let price = record.get('hist');
+        console.log('transaction history: ', price);
+        // record.set('buy.amount', '423');
+      });
+    }
+  });
 };
 
 // Define the sell method
-const sell = (data) => {
+const sell = (connect, data) => {
+
   /** Create OPEN and TRANSACTION HISTORY lists **/
   // Open Buy Orders
   let openBuy = connect.record.getList('openBuy');
@@ -337,6 +382,7 @@ const sell = (data) => {
   let openSell = connect.record.getList('openSell');
   // Transaction History
   let transactionHistory = connect.record.getList('transactionHistory');
+
   // Creates unique ID
   let unique = connect.getUid();
   // Creates a new sell record
@@ -545,58 +591,57 @@ const sell = (data) => {
       }
     });
   });
+  /** Test **/
+  // Open Buy Orders
+  openBuy.whenReady((list) => {
+    // console.log('buy', list.getEntries());
+    var entries = list.getEntries();
+
+    for (var i = 0; i < entries.length; i++) {
+      connect.record.getRecord(entries[i]).whenReady((record) => {
+        // console.log('FJLEJLKJF', record);
+        let price = record.get('buy');
+        console.log('buy list: ', price, record.name);
+        // record.set('buy.amount', '423');
+      });
+    }
+  });
+
+  // Open Sell Orders
+  openSell.whenReady((list) => {
+    // console.log('sell', list.getEntries());
+    const entries = list.getEntries();
+    // var prices = [];
+    for (var i = 0; i < entries.length; i++) {
+      connect.record.getRecord(entries[i]).whenReady((record) => {
+        // console.log('FJLEJLKJF', record);
+        let price = record.get('sell');
+        console.log('sell list: ', price, record.name);
+        // console.log('sell price: ', record.get('price'));
+      });
+    }
+    // console.log('sell array: ', prices);
+  });
+
+  // Transaction History Buy Orders
+  transactionHistory.whenReady((list) => {
+    console.log('hist', list.getEntries());
+    var entries = list.getEntries();
+
+    for (var i = 0; i < entries.length; i++) {
+      connect.record.getRecord(entries[i]).whenReady((record) => {
+        // console.log('FJLEJLKJF', record);
+        let price = record.get('hist');
+        console.log('history: ', price);
+        // record.set('buy.amount', '423');
+      });
+    }
+  });
 };
-
-
-
-/** Test **/
-// Open Buy Orders
-// openBuy.whenReady((list) => {
-//   // console.log('buy', list.getEntries());
-//   var entries = list.getEntries();
-//
-//   for (var i = 0; i < entries.length; i++) {
-//     connect.record.getRecord(entries[i]).whenReady((record) => {
-//       // console.log('FJLEJLKJF', record);
-//       let price = record.get('buy');
-//       console.log('buy list: ', price, record.name);
-//       // record.set('buy.amount', '423');
-//     });
-//   }
-// });
-//
-// // Open Sell Orders
-// openSell.whenReady((list) => {
-//   // console.log('sell', list.getEntries());
-//   const entries = list.getEntries();
-//   // var prices = [];
-//   for (var i = 0; i < entries.length; i++) {
-//     connect.record.getRecord(entries[i]).whenReady((record) => {
-//       // console.log('FJLEJLKJF', record);
-//       let price = record.get('sell');
-//       console.log('sell list: ', price, record.name);
-//       // console.log('sell price: ', record.get('price'));
-//     });
-//   }
-//   // console.log('sell array: ', prices);
-// });
-//
-// // Transaction History Buy Orders
-// transactionHistory.whenReady((list) => {
-//   console.log('hist', list.getEntries());
-//   var entries = list.getEntries();
-//
-//   for (var i = 0; i < entries.length; i++) {
-//     connect.record.getRecord(entries[i]).whenReady((record) => {
-//       // console.log('FJLEJLKJF', record);
-//       let price = record.get('hist');
-//       console.log('history: ', price);
-//       // record.set('buy.amount', '423');
-//     });
-//   }
-// });
 
 module.exports = {
   initTransactionBuy: initTransactionBuy,
-  initTransactionSell: initTransactionSell
+  initTransactionSell: initTransactionSell,
+  buy: buy,
+  sell: sell
 }
