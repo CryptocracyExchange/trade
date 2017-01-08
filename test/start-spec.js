@@ -9,7 +9,6 @@ const server = new Deepstream({port:6104});
 const trade = require('../server/trading/start.js');
 var connect, ds, openBuy, openSell, transactionHistory;
 
-// console.log(trade);
 before(function(done) {
   server.start();
   setTimeout(function() {
@@ -240,22 +239,6 @@ describe('Transactions', function() {
     });
   });
   describe('Sell', function() {
-    // it('test', function(done) {
-    //  openSell.whenReady((list) => {
-    //    // console.log('sell', list.getEntries());
-    //    const entries = list.getEntries();
-    //    // var prices = [];
-    //    for (var i = 0; i < entries.length; i++) {
-    //      connect.record.getRecord(entries[i]).whenReady((record) => {
-    //        // console.log('FJLEJLKJF', record);
-    //        let price = record.get('sell');
-    //        console.log('sell list: ', price, record.name);
-    //        // console.log('sell price: ', record.get('price'));
-    //      });
-    //    }
-    //    // console.log('sell array: ', prices);
-    //  });
-    // });
     it('should create a new sell order and store into openSell list', function(done) {
       let sellData = {
         userID: 'harry',
@@ -316,21 +299,3 @@ describe('Transactions', function() {
     });
   });
 });
-
-// setTimeout(function() {
-//   openSell.whenReady((list) => {
-//     // console.log('sell', list.getEntries());
-//     const entries = list.getEntries();
-//     // var prices = [];
-//     for (var i = 0; i < entries.length; i++) {
-//       connect.record.getRecord(entries[i]).whenReady((record) => {
-//         // console.log('FJLEJLKJF', record);
-//         let price = record.get('sell');
-//         console.log('sell list: ', price, record.name);
-//         // console.log('sell price: ', record.get('price'));
-//       });
-//     }
-//     // console.log('sell array: ', prices);
-//     done();
-//   });
-// }, 50);
