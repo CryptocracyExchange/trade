@@ -34,7 +34,7 @@ let openSell = connect.record.getList('openSell');
 let transactionHistory = connect.record.getList('transactionHistory');
 
 // Run sample tests
-// runTest(openBuy, openSell, transactionHistory, connect);
+runTest(openBuy, openSell, transactionHistory, connect);
 
 /** Invoke Event Listeners **/
 events.initTransactionBuy(connect, openBuy, openSell, transactionHistory);

@@ -11,6 +11,8 @@ const initTransactionBuy = (connect, openBuy, openSell, transactionHistory) => {
     connect.event.subscribe('returnBalance', (balance) => {
       // console.log('bal', balance, 'data', data)
       if (balance.balance >= data.amount * data.price) {
+        connect.event.unsubscribe('transactionBuy');
+        connect.event.unsubscribe('returnBalance');
         buy(connect, data, openBuy, openSell, transactionHistory);
       } else {
         console.log('NOT ENOUGH MONEY!');
@@ -32,6 +34,8 @@ const initTransactionSell = (connect, openBuy, openSell, transactionHistory) => 
         console.log('bal', balance.balance, 'amount', data.amount * data.price);
       if (balance.balance >= data.amount * data.price) {
         console.log('fire', data);
+        connect.event.unsubscribe('transactionBuy');
+        connect.event.unsubscribe('returnBalance');
         sell(connect, data, openBuy, openSell, transactionHistory);
       } else {
         console.log('NOT ENOUGH MONEY!');
@@ -58,6 +62,9 @@ const buy = (connect, data, openBuy, openSell, transactionHistory) => {
         console.log('Buy record set with error:', err)
       } else {
         console.log('Buy record set without error');
+        // Update user balance after buy order
+        data.update = -(+data.amount * +data.price);
+        connect.event.emit('updateBalance', data);
         // Push record into open buy transactions
         openBuy.whenReady((list) => {
           list.addEntry(`open/${unique}`);
@@ -246,6 +253,9 @@ const sell = (connect, data, openBuy, openSell, transactionHistory) => {
         console.log('Sell record set with error:', err)
       } else {
         console.log('Sell record set without error');
+        // Update user balance after sell.  Will need to refactor with avail balance
+        data.update = -(+data.amount * +data.price);
+        connect.event.emit('updateBalance', data);
         // Push record into open sell transactions
         openSell.whenReady((list) => {
           list.addEntry(`open/${unique}`);
