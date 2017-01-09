@@ -1,6 +1,6 @@
 const path = require('path');
 const port = 3002;
-
+const runTest = require('./run-tests.js');
 const deepstream = require('deepstream.io-client-js');
 const deepstreamServer = process.env.NODE_ENV === 'prod' ? 'deepstream' : 'localhost';
 const auth = process.env.NODE_ENV === 'prod' ? {
@@ -11,7 +11,7 @@ const auth = process.env.NODE_ENV === 'prod' ? {
 const connect = deepstream(`${deepstreamServer}:6020`).login(auth);
 const events = require('./trading/start.js');
 
-
+// Dev dependencies
 if (process.env.NODE_ENV === 'dev') {
   const express = require('express');
   const app = express();
@@ -24,5 +24,48 @@ if (process.env.NODE_ENV === 'dev') {
   console.log(`Listening on ${port}`);
 }
 
-events.initTransactionBuy(connect);
-events.initTransactionSell(connect);
+/** Create OPEN and TRANSACTION HISTORY lists **/
+
+// Open Buy Orders
+let openBuy = connect.record.getList('openBuy');
+// Open Sell Orders
+let openSell = connect.record.getList('openSell');
+// Transaction History
+let transactionHistory = connect.record.getList('transactionHistory');
+
+// Run sample tests
+// runTest(openBuy, openSell, transactionHistory, connect);
+
+const newItem1 = connect.record.getRecord('shoes/air')
+newItem1.set({color: 'red', brand: 'Nike', price: 100})
+
+const newItem2 = connect.record.getRecord('shoes/classics')
+newItem2.set({color: 'white', brand: 'Reebok', price: 90})
+
+const newItem3 = connect.record.getRecord('shoes/liga')
+newItem3.set({color: 'green', brand: 'Puma', price: 110})
+
+const priceString = JSON.stringify({
+  table: 'shoes',
+  query: [
+    [ 'price', 'ne', '90' ]
+  ]
+});
+// setTimeout(function(){
+  connect.record.getList('search?' + priceString).whenReady(function(list) {
+    console.log(list.getEntries());
+  });
+// }, 2000);
+
+// setTimeout(function() {
+//   var results = connect.record.getList('search?' + priceString);
+//   console.log('hello', results.getEntries());
+//   priceString.delete();
+// }, 1000);
+
+
+/** Invoke Event Listeners **/
+events.initTransactionBuy(connect, openBuy, openSell, transactionHistory);
+events.initTransactionSell(connect, openBuy, openSell, transactionHistory);
+
+connect.record.getList('search?' + priceString).delete();
