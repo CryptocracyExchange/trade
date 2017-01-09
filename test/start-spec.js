@@ -21,122 +21,104 @@ before(function(done) {
     // Creates Sample Open Buy and Sell List
     openBuy.whenReady(function(newBuyList) {
       openSell.whenReady((newList) => {
-        let newSellRecord1 = connect.record.getRecord(`transaction/sell/open/1`);
-        let newSellRecord2 = connect.record.getRecord(`transaction/sell/open/2`);
-        let newSellRecord3 = connect.record.getRecord(`transaction/sell/open/3`);
-        let newSellRecord4 = connect.record.getRecord(`transaction/sell/open/4`);
-        let newSellRecord5 = connect.record.getRecord(`transaction/sell/open/5`);
-        let newBuyRecord1 = connect.record.getRecord(`transaction/buy/open/1`);
-        let newBuyRecord2 = connect.record.getRecord(`transaction/buy/open/2`);
-        let newBuyRecord3 = connect.record.getRecord(`transaction/buy/open/3`);
-        let newBuyRecord4 = connect.record.getRecord(`transaction/buy/open/4`);
+        let newSellRecord1 = connect.record.getRecord(`open/1`);
+        let newSellRecord2 = connect.record.getRecord(`open/2`);
+        let newSellRecord3 = connect.record.getRecord(`open/3`);
+        let newSellRecord4 = connect.record.getRecord(`open/4`);
+        let newSellRecord5 = connect.record.getRecord(`open/5`);
+        let newBuyRecord1 = connect.record.getRecord(`open/6`);
+        let newBuyRecord2 = connect.record.getRecord(`open/7`);
+        let newBuyRecord3 = connect.record.getRecord(`open/8`);
+        let newBuyRecord4 = connect.record.getRecord(`open/9`);
         newSellRecord1.whenReady((newRec) => {
           newRec.set({
-            sell: {
-              userID: 'nick',
-              amount: 5,
-              price: 20,
-              currency: 'BTC'
-            }
+            userID: 'nick',
+            amount: 5,
+            price: 20,
+            currency: 'BTC'
           }, function(err) {
-            newList.addEntry(`transaction/sell/open/1`);
+            newList.addEntry(`open/1`);
           });
         });
         newSellRecord2.whenReady((newRec) => {
           newRec.set({
-            sell: {
-              userID: 'nick',
-              amount: 5,
-              price: 21,
-              currency: 'BTC'
-            }
+            userID: 'nick',
+            amount: 5,
+            price: 21,
+            currency: 'BTC'
           }, function(err) {
-            newList.addEntry(`transaction/sell/open/2`);
+            newList.addEntry(`open/2`);
           });
         });
         newSellRecord3.whenReady((newRec) => {
           newRec.set({
-            sell: {
-              userID: 'nick',
-              amount: 5,
-              price: 22,
-              currency: 'BTC'
-            }
+            userID: 'nick',
+            amount: 5,
+            price: 22,
+            currency: 'BTC'
           }, function(err) {
-            newList.addEntry(`transaction/sell/open/3`);
+            newList.addEntry(`open/3`);
           });
         });
         newSellRecord4.whenReady((newRec) => {
           newRec.set({
-            sell: {
-              userID: 'nick',
-              amount: 5,
-              price: 23,
-              currency: 'BTC'
-            }
+            userID: 'nick',
+            amount: 5,
+            price: 23,
+            currency: 'BTC'
           }, function(err) {
-            newList.addEntry(`transaction/sell/open/4`);
+            newList.addEntry(`open/4`);
           });
         });
         newSellRecord5.whenReady((newRec) => {
           newRec.set({
-            sell: {
-              userID: 'nick',
-              amount: 5,
-              price: 24,
-              currency: 'BTC'
-            }
+            userID: 'nick',
+            amount: 5,
+            price: 24,
+            currency: 'BTC'
           }, function(err) {
-            newList.addEntry(`transaction/sell/open/5`);
+            newList.addEntry(`open/5`);
           });
         });
 
         newBuyRecord1.whenReady((newRec) => {
           newRec.set({
-            buy: {
-              userID: 'nick',
-              amount: 5,
-              price: 60,
-              currency: 'BTC'
-            }
+            userID: 'nick',
+            amount: 5,
+            price: 60,
+            currency: 'BTC'
           }, function(err) {
-            newBuyList.addEntry(`transaction/buy/open/1`);
+            newBuyList.addEntry(`open/6`);
           });
         });
         newBuyRecord2.whenReady((newRec) => {
           newRec.set({
-            buy: {
-              userID: 'nick',
-              amount: 5,
-              price: 59,
-              currency: 'BTC'
-            }
+            userID: 'nick',
+            amount: 5,
+            price: 59,
+            currency: 'BTC'
           }, function(err) {
-            newBuyList.addEntry(`transaction/buy/open/2`);
+            newBuyList.addEntry(`open/7`);
           });
         });
         newBuyRecord3.whenReady((newRec) => {
           newRec.set({
-            buy: {
-              userID: 'nick',
-              amount: 5,
-              price: 58,
-              currency: 'BTC'
-            }
+            userID: 'nick',
+            amount: 5,
+            price: 58,
+            currency: 'BTC'
           }, function(err) {
-            newBuyList.addEntry(`transaction/buy/open/3`);
+            newBuyList.addEntry(`open/8`);
           });
         });
         newBuyRecord4.whenReady((newRec) => {
           newRec.set({
-            buy: {
-              userID: 'nick',
-              amount: 5,
-              price: 57,
-              currency: 'BTC'
-            }
+            userID: 'nick',
+            amount: 5,
+            price: 57,
+            currency: 'BTC'
           }, function(err) {
-            newBuyList.addEntry(`transaction/buy/open/4`);
+            newBuyList.addEntry(`open/9`);
           });
         });
         done();
@@ -186,7 +168,7 @@ describe('Transactions', function() {
         price: 5,
         currency: 'BTC'
       };
-      trade.buy(connect, buyData);
+      trade.buy(connect, buyData, openBuy, openSell, transactionHistory);
       setTimeout(function() {
         expect(openBuy.getEntries().length).to.be.equal(5);
         done();
@@ -199,7 +181,7 @@ describe('Transactions', function() {
         price: 20,
         currency: 'BTC'
       };
-      trade.buy(connect, buyData);
+      trade.buy(connect, buyData, openBuy, openSell, transactionHistory);
       setTimeout(function() {
         expect(transactionHistory.getEntries().length).to.be.equal(2);
         expect(openSell.getEntries().length).to.be.equal(4);
@@ -214,7 +196,7 @@ describe('Transactions', function() {
         price: 22,
         currency: 'BTC'
       };
-      trade.buy(connect, buyData);
+      trade.buy(connect, buyData, openBuy, openSell, transactionHistory);
       setTimeout(function() {
         expect(transactionHistory.getEntries().length).to.be.equal(6);
         expect(openSell.getEntries().length).to.be.equal(3);
@@ -229,7 +211,7 @@ describe('Transactions', function() {
         price: 22,
         currency: 'BTC'
       };
-      trade.buy(connect, buyData);
+      trade.buy(connect, buyData, openBuy, openSell, transactionHistory);
       setTimeout(function() {
         expect(transactionHistory.getEntries().length).to.be.equal(8);
         expect(openSell.getEntries().length).to.be.equal(3);
@@ -246,7 +228,7 @@ describe('Transactions', function() {
         price: 500,
         currency: 'BTC'
       };
-      trade.sell(connect, sellData);
+      trade.sell(connect, sellData, openBuy, openSell, transactionHistory);
       setTimeout(function() {
         expect(openSell.getEntries().length).to.be.equal(4);
         done();
@@ -259,7 +241,7 @@ describe('Transactions', function() {
         price: 60,
         currency: 'BTC'
       };
-    trade.sell(connect, sellData);
+    trade.sell(connect, sellData, openBuy, openSell, transactionHistory);
       setTimeout(function() {
         expect(transactionHistory.getEntries().length).to.be.equal(10);
         expect(openSell.getEntries().length).to.be.equal(4);
@@ -274,7 +256,7 @@ describe('Transactions', function() {
         price: 57,
         currency: 'BTC'
       };
-      trade.buy(connect, sellData);
+      trade.buy(connect, sellData, openBuy, openSell, transactionHistory);
       setTimeout(function() {
         expect(transactionHistory.getEntries().length).to.be.equal(14);
         expect(openSell.getEntries().length).to.be.equal(2);
@@ -289,7 +271,7 @@ describe('Transactions', function() {
         price: 57,
         currency: 'BTC'
       };
-      trade.buy(connect, sellData);
+      trade.buy(connect, sellData, openBuy, openSell, transactionHistory);
       setTimeout(function() {
         expect(transactionHistory.getEntries().length).to.be.equal(16);
         expect(openSell.getEntries().length).to.be.equal(2);

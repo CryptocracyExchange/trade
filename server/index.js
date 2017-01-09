@@ -34,33 +34,41 @@ let openSell = connect.record.getList('openSell');
 let transactionHistory = connect.record.getList('transactionHistory');
 
 // Run sample tests
-// runTest(openBuy, openSell, transactionHistory, connect);
+runTest(openBuy, openSell, transactionHistory, connect);
 
-const newItem1 = connect.record.getRecord('shoes/air')
-newItem1.set({color: 'red', brand: 'Nike', price: 100})
+// const newItem1 = connect.record.getRecord('shoes/air');
+// const newItem2 = connect.record.getRecord('shoes/classics');
+// const newItem3 = connect.record.getRecord('shoes/liga');
+//
+// newItem1.whenReady((item1) => {
+//   newItem2.whenReady((item2) => {
+//     newItem3.whenReady((item3) => {
+//       item1.set({color: 'red', brand: 'Nike', price: 100});
+//       item2.set({color: 'white', brand: 'Reebok', price: 90});
+//       item3.set({color: 'green', brand: 'Puma', price: 110});
+//     });
+//   });
+// });
 
-const newItem2 = connect.record.getRecord('shoes/classics')
-newItem2.set({color: 'white', brand: 'Reebok', price: 90})
 
-const newItem3 = connect.record.getRecord('shoes/liga')
-newItem3.set({color: 'green', brand: 'Puma', price: 110})
-
-const priceString = JSON.stringify({
-  table: 'shoes',
-  query: [
-    [ 'price', 'ne', '90' ]
-  ]
-});
-// setTimeout(function(){
-  connect.record.getList('search?' + priceString).whenReady(function(list) {
-    console.log(list.getEntries());
-  });
+// const priceString = JSON.stringify({
+//   table: 'shoes',
+//   query: [
+//     [ 'price', 'ne', '90' ]
+//   ]
+// });
+// // setTimeout(function(){
+//   connect.record.getList('search?' + priceString).whenReady(function(list) {
+//     console.log(list.getEntries());
+//   });
 // }, 2000);
 
+
 // setTimeout(function() {
+//   console.log(`search?${priceString}`)
 //   var results = connect.record.getList('search?' + priceString);
 //   console.log('hello', results.getEntries());
-//   priceString.delete();
+//   // priceString.delete();
 // }, 1000);
 
 
@@ -68,4 +76,14 @@ const priceString = JSON.stringify({
 events.initTransactionBuy(connect, openBuy, openSell, transactionHistory);
 events.initTransactionSell(connect, openBuy, openSell, transactionHistory);
 
-connect.record.getList('search?' + priceString).delete();
+// newItem1.whenReady((item1) => {
+//   newItem2.whenReady((item2) => {
+//     newItem3.whenReady((item3) => {
+//       console.log('newItem1', item1.get());
+//       console.log('newItem2', item2.get());
+//       console.log('newItem3', item3.get());
+//     });
+//   });
+// });
+
+// connect.record.getList('search?' + priceString).delete();
