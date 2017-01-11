@@ -75,6 +75,7 @@ const buy = (connect, data, openBuy, openSell, transactionHistory) => {
 
         // Update user balance after buy order
         data.update = -(+data.amount * +data.price);
+        data.balanceType = 'available';
         console.log('balance type', data.balanceType);
         connect.event.emit('updateBalance', data);
 
@@ -294,6 +295,7 @@ const sell = (connect, data, openBuy, openSell, transactionHistory) => {
         console.log('Sell record set without error');
         // Update user balance after sell.  Will need to refactor with avail balance
         data.update = -(+data.amount * +data.price);
+        data.balanceType = 'available';
         console.log('balancetype', data);
         connect.event.emit('updateBalance', data);
         // Push record into open sell transactions
