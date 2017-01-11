@@ -12,18 +12,20 @@ const initTransactionBuy = (connect, openBuy, openSell, transactionHistory) => {
     let options = {
       userID: data.userID,
       currency: data.currency,
+      update: data.update,
+      balanceType: 'available'
     };
-    // connect.event.emit('checkBalance', options);
-    // connect.event.subscribe('returnBalance', (balance) => {
-    //   // console.log('bal', balance, 'data', data)
-    //   if (balance.balance >= data.amount * data.price) {
-    //     connect.event.unsubscribe('transactionBuy');
-    //     connect.event.unsubscribe('returnBalance');
+    connect.event.emit('checkBalance', options);
+    connect.event.subscribe('returnBalance', (balance) => {
+      // console.log('bal', balance, 'data', data)
+      if (balance.balance >= data.amount * data.price) {
+        connect.event.unsubscribe('transactionBuy');
+        connect.event.unsubscribe('returnBalance');
         buy(connect, data, openBuy, openSell, transactionHistory);
-    //   } else {
-    //     console.log('NOT ENOUGH MONEY!');
-    //   }
-    // });
+      } else {
+        console.log('NOT ENOUGH MONEY!');
+      }
+    });
   });
 }
 
@@ -32,21 +34,23 @@ const initTransactionSell = (connect, openBuy, openSell, transactionHistory) => 
   connect.event.subscribe('transactionSell', (data) => {
     let options = {
       userID: data.userID,
-      currency: data.currency
+      currency: data.currency,
+      update: data.update,
+      balanceType: 'available'
     };
-    // console.log('sell options', data);
-    // connect.event.emit('checkBalance', options);
-    // connect.event.subscribe('returnBalance', (balance) => {
-    //     console.log('bal', balance.balance, 'amount', data.amount * data.price);
-    //   if (balance.balance >= data.amount * data.price) {
-    //     console.log('fire', data);
-    //     connect.event.unsubscribe('transactionBuy');
-    //     connect.event.unsubscribe('returnBalance');
+    console.log('sell options', data);
+    connect.event.emit('checkBalance', options);
+    connect.event.subscribe('returnBalance', (balance) => {
+        console.log('bal', balance.balance, 'amount', data.amount * data.price);
+      if (balance.balance >= data.amount * data.price) {
+          console.log('fire', data);
+        connect.event.unsubscribe('transactionSell');
+        connect.event.unsubscribe('returnBalance');
         sell(connect, data, openBuy, openSell, transactionHistory);
-    //   } else {
-    //     console.log('NOT ENOUGH MONEY!');
-    //   }
-    // });
+      } else {
+        console.log('NOT ENOUGH MONEY!');
+      }
+    });
   });
 }
 
@@ -68,9 +72,12 @@ const buy = (connect, data, openBuy, openSell, transactionHistory) => {
         console.log('Buy record set with error:', err)
       } else {
         console.log('Buy record set without error');
+
         // Update user balance after buy order
         data.update = -(+data.amount * +data.price);
+        console.log('balance type', data.balanceType);
         connect.event.emit('updateBalance', data);
+
         // Push record into open buy transactions
         openBuy.whenReady((list) => {
           list.addEntry(`open/${unique}`);
@@ -85,6 +92,7 @@ const buy = (connect, data, openBuy, openSell, transactionHistory) => {
             });
           }
 
+          // Sort buy list
           tempArr = _.sortBy(tempArr, [function(rec){ return +rec.price; }]);
           _.forEach(entries, (entry) => {
             list.removeEntry(entry);
@@ -127,6 +135,10 @@ const buy = (connect, data, openBuy, openSell, transactionHistory) => {
                             }, err => {
                               if (err) {
                                 console.log('buy', err);
+                              } else {
+                                data.balanceType = 'actual';
+                                data.userID = buyRecord.get('userID');
+                                connect.event.emit('updateBalance', data);
                               }
                             });
                             newHistSellRecord.set({
@@ -140,6 +152,10 @@ const buy = (connect, data, openBuy, openSell, transactionHistory) => {
                             }, err => {
                               if (err) {
                                 console.log('sell', err);
+                              } else {
+                                data.balanceType = 'actual';
+                                data.userID = sellRecord.get('userID');
+                                connect.event.emit('updateBalance', data);
                               }
                             });
                             sellList.removeEntry(sellRecord.name);
@@ -167,6 +183,9 @@ const buy = (connect, data, openBuy, openSell, transactionHistory) => {
                                 if (err) {
                                   console.log('buy', err);
                                 } else {
+                                  data.balanceType = 'actual';
+                                  data.userID = buyRecord.get('userID');
+                                  connect.event.emit('updateBalance', data);
                                   console.log('setting new buy', newHistBuyRecord.name);
                                 }
                               });
@@ -182,6 +201,9 @@ const buy = (connect, data, openBuy, openSell, transactionHistory) => {
                                 if (err) {
                                   console.log('sell', err);
                                 } else {
+                                  data.balanceType = 'actual';
+                                  data.userID = sellRecord.get('userID');
+                                  connect.event.emit('updateBalance', data);
                                   console.log('setting new sell', newHistSellRecord.name);
                                 }
                               });
@@ -189,6 +211,7 @@ const buy = (connect, data, openBuy, openSell, transactionHistory) => {
                               transHist.addEntry(newHistSellRecord.name);
                               sellList.removeEntry(sellRecord.name);
                               buyRecord.set('amount', diff);
+
                             }
                           } else if (sellRecord.get('amount') > buyRecord.get('amount')){
                             // Supply > Demand
@@ -206,6 +229,10 @@ const buy = (connect, data, openBuy, openSell, transactionHistory) => {
                               }, err => {
                                 if (err) {
                                   console.log('buy', err);
+                                } else {
+                                  data.balanceType = 'actual';
+                                  data.userID = buyRecord.get('userID');
+                                  connect.event.emit('updateBalance', data);
                                 }
                               });
                               newHistSellRecord.set({
@@ -219,12 +246,18 @@ const buy = (connect, data, openBuy, openSell, transactionHistory) => {
                               }, err => {
                                 if (err) {
                                   console.log('sell', err);
+                                } else {
+                                  data.balanceType = 'actual';
+                                  data.userID = sellRecord.get('userID');
+                                  connect.event.emit('updateBalance', data);
                                 }
                               });
                               transHist.addEntry(newHistSellRecord.name);
                               transHist.addEntry(newHistBuyRecord.name);
                               buyList.removeEntry(buyRecord.name);
                               sellRecord.set('amount', diff);
+                              data.balanceType = 'actual';
+                              connect.event.emit('updateBalance', data);
                             }
                           }
                         }
@@ -261,6 +294,7 @@ const sell = (connect, data, openBuy, openSell, transactionHistory) => {
         console.log('Sell record set without error');
         // Update user balance after sell.  Will need to refactor with avail balance
         data.update = -(+data.amount * +data.price);
+        console.log('balancetype', data);
         connect.event.emit('updateBalance', data);
         // Push record into open sell transactions
         openSell.whenReady((list) => {
@@ -318,6 +352,10 @@ const sell = (connect, data, openBuy, openSell, transactionHistory) => {
                             }, err => {
                               if (err) {
                                 console.log('buy', err);
+                              } else {
+                                data.balanceType = 'actual';
+                                data.userID = buyRecord.get('userID');
+                                connect.event.emit('updateBalance', data);
                               }
                             });
                             newHistSellRecord.set({
@@ -331,6 +369,10 @@ const sell = (connect, data, openBuy, openSell, transactionHistory) => {
                             }, err => {
                               if (err) {
                                 console.log('sell', err);
+                              } else {
+                                data.balanceType = 'actual';
+                                data.userID = sellRecord.get('userID');
+                                connect.event.emit('updateBalance', data);
                               }
                             });
                             buyList.removeEntry(buyRecord.name);
@@ -360,6 +402,9 @@ const sell = (connect, data, openBuy, openSell, transactionHistory) => {
                                 } else {
                                   console.log('setting new buy', newHistBuyRecord.name);
                                   transHist.addEntry(newHistBuyRecord.name);
+                                  data.balanceType = 'actual';
+                                  data.userID = buyRecord.get('userID');
+                                  connect.event.emit('updateBalance', data);
                                 }
                               });
                               newHistSellRecord.set({
@@ -375,6 +420,9 @@ const sell = (connect, data, openBuy, openSell, transactionHistory) => {
                                   console.log('buy', err);
                                 } else {
                                   transHist.addEntry(newHistSellRecord.name);
+                                  data.balanceType = 'actual';
+                                  data.userID = sellRecord.get('userID');
+                                  connect.event.emit('updateBalance', data);
                                 }
                               });
                               buyList.removeEntry(buyRecord.name);
@@ -396,6 +444,10 @@ const sell = (connect, data, openBuy, openSell, transactionHistory) => {
                               }, err => {
                                 if (err) {
                                   console.log('buy', err);
+                                } else {
+                                  data.balanceType = 'actual';
+                                  data.userID = buyRecord.get('userID');
+                                  connect.event.emit('updateBalance', data);
                                 }
                               });
                               newHistSellRecord.set({
@@ -409,6 +461,10 @@ const sell = (connect, data, openBuy, openSell, transactionHistory) => {
                               }, err => {
                                 if (err) {
                                   console.log('sell', err);
+                                } else {
+                                  data.balanceType = 'actual';
+                                  data.userID = sellRecord.get('userID');
+                                  connect.event.emit('updateBalance', data);
                                 }
                               });
                               transHist.addEntry(newHistSellRecord.name);
@@ -436,4 +492,4 @@ module.exports = {
   initTransactionSell: initTransactionSell,
   buy: buy,
   sell: sell
-}
+};
