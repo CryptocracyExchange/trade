@@ -159,11 +159,23 @@ const buy = (connect, data, openBuy, openSell, transactionHistory) => {
                                 connect.event.emit('updateBalance', data);
                               }
                             });
-                            sellList.removeEntry(sellRecord.name);
-                            buyList.removeEntry(buyRecord.name);
                             transHist.addEntry(newHistSellRecord.name);
                             transHist.addEntry(newHistBuyRecord.name);
+                            sellList.removeEntry(sellRecord.name);
+                            buyList.removeEntry(buyRecord.name);
                             noDuplicate = false;
+
+                            // Alert closed sale
+                            connect.event.emit('closedSale', {
+                              userID: buyRecord.get('userID'),
+                              price: sellRecord.get('price'),
+                              currency: buyRecord.get('currency'),
+                              type: 'buy',
+                              amount: buyRecord.get('amount'),
+                              from: sellRecord.name,
+                              originalId: buyRecord.name
+                            });
+
                           } else if (sellRecord.get('amount') < buyRecord.get('amount')) {
                             // Supply < Demand
                             diff = buyRecord.get('amount') - sellRecord.get('amount');
@@ -212,7 +224,16 @@ const buy = (connect, data, openBuy, openSell, transactionHistory) => {
                               transHist.addEntry(newHistSellRecord.name);
                               sellList.removeEntry(sellRecord.name);
                               buyRecord.set('amount', diff);
-
+                              // Alert closed sale
+                              connect.event.emit('closedSale', {
+                                userID: sellRecord.get('userID'),
+                                price: sellRecord.get('price'),
+                                currency: sellRecord.get('currency'),
+                                type: 'sell',
+                                amount: sellRecord.get('amount'),
+                                to: buyRecord.name,
+                                originalId: sellRecord.name
+                              });
                             }
                           } else if (sellRecord.get('amount') > buyRecord.get('amount')){
                             // Supply > Demand
@@ -257,8 +278,16 @@ const buy = (connect, data, openBuy, openSell, transactionHistory) => {
                               transHist.addEntry(newHistBuyRecord.name);
                               buyList.removeEntry(buyRecord.name);
                               sellRecord.set('amount', diff);
-                              data.balanceType = 'actual';
-                              connect.event.emit('updateBalance', data);
+                              // Alert closed sale
+                              connect.event.emit('closedSale', {
+                                userID: buyRecord.get('userID'),
+                                price: sellRecord.get('price'),
+                                currency: buyRecord.get('currency'),
+                                type: 'buy',
+                                amount: buyRecord.get('amount'),
+                                from: sellRecord.name,
+                                originalId: buyRecord.name
+                              });
                             }
                           }
                         }
@@ -377,11 +406,22 @@ const sell = (connect, data, openBuy, openSell, transactionHistory) => {
                                 connect.event.emit('updateBalance', data);
                               }
                             });
-                            buyList.removeEntry(buyRecord.name);
-                            sellList.removeEntry(sellRecord.name);
                             transHist.addEntry(newHistSellRecord.name);
                             transHist.addEntry(newHistBuyRecord.name);
+                            buyList.removeEntry(buyRecord.name);
+                            sellList.removeEntry(sellRecord.name);
                             noDuplicate = false;
+
+                            // Alert closed sale
+                            connect.event.emit('closedSale', {
+                              userID: sellRecord.get('userID'),
+                              price: buyRecord.get('price'),
+                              currency: sellRecord.get('currency'),
+                              type: 'sell',
+                              amount: buyRecord.get('amount'),
+                              to: buyRecord.name,
+                              originalId: sellRecord.name
+                            });
                           } else if (buyRecord.get('amount') < sellRecord.get('amount')) {
                             // Supply < Demand
                             diff = sellRecord.get('amount') - buyRecord.get('amount');
@@ -403,7 +443,6 @@ const sell = (connect, data, openBuy, openSell, transactionHistory) => {
                                   console.log('buy', err);
                                 } else {
                                   console.log('setting new buy', newHistBuyRecord.name);
-                                  transHist.addEntry(newHistBuyRecord.name);
                                   data.balanceType = 'actual';
                                   data.userID = buyRecord.get('userID');
                                   connect.event.emit('updateBalance', data);
@@ -421,14 +460,26 @@ const sell = (connect, data, openBuy, openSell, transactionHistory) => {
                                 if (err) {
                                   console.log('buy', err);
                                 } else {
-                                  transHist.addEntry(newHistSellRecord.name);
                                   data.balanceType = 'actual';
                                   data.userID = sellRecord.get('userID');
                                   connect.event.emit('updateBalance', data);
                                 }
                               });
+                              transHist.addEntry(newHistSellRecord.name);
+                              transHist.addEntry(newHistBuyRecord.name);
                               buyList.removeEntry(buyRecord.name);
                               sellRecord.set('amount', diff);
+
+                              // Alert closed sale
+                              connect.event.emit('closedSale', {
+                                userID: buyRecord.get('userID'),
+                                price: buyRecord.get('price'),
+                                currency: buyRecord.get('currency'),
+                                type: 'buy',
+                                amount: buyRecord.get('amount'),
+                                from: sellRecord.name,
+                                originalId: buyRecord.name
+                              });
                             }
                           } else if ((buyRecord.get('amount') > sellRecord.get('amount'))) {
                             // Supply > Demand
@@ -473,6 +524,16 @@ const sell = (connect, data, openBuy, openSell, transactionHistory) => {
                               transHist.addEntry(newHistBuyRecord.name);
                               sellList.removeEntry(sellRecord.name);
                               buyRecord.set('amount', diff);
+                              // Alert closed sale
+                              connect.event.emit('closedSale', {
+                                userID: sellRecord.get('userID'),
+                                price: buyRecord.get('price'),
+                                currency: sellRecord.get('currency'),
+                                type: 'sell',
+                                amount: sellRecord.get('amount'),
+                                to: buyRecord.name,
+                                originalId: sellRecord.name
+                              });
                             }
                           }
                         }
