@@ -1,23 +1,29 @@
 const _ = require('lodash');
+const chalk = require('chalk');
+
+// Exchange rate function
+const exchangeRate = () => {
+
+};
 
 // Buy Transaction Listener
 const initTransactionBuy = (connect, openBuy, openSell, transactionHistory) => {
   connect.event.subscribe('transactionBuy', (data) => {
     let options = {
       userID: data.userID,
-      currency: data.currency
+      currency: data.currency,
     };
-    connect.event.emit('checkBalance', options);
-    connect.event.subscribe('returnBalance', (balance) => {
-      // console.log('bal', balance, 'data', data)
-      if (balance.balance >= data.amount * data.price) {
-        connect.event.unsubscribe('transactionBuy');
-        connect.event.unsubscribe('returnBalance');
+    // connect.event.emit('checkBalance', options);
+    // connect.event.subscribe('returnBalance', (balance) => {
+    //   // console.log('bal', balance, 'data', data)
+    //   if (balance.balance >= data.amount * data.price) {
+    //     connect.event.unsubscribe('transactionBuy');
+    //     connect.event.unsubscribe('returnBalance');
         buy(connect, data, openBuy, openSell, transactionHistory);
-      } else {
-        console.log('NOT ENOUGH MONEY!');
-      }
-    });
+    //   } else {
+    //     console.log('NOT ENOUGH MONEY!');
+    //   }
+    // });
   });
 }
 
@@ -29,18 +35,18 @@ const initTransactionSell = (connect, openBuy, openSell, transactionHistory) => 
       currency: data.currency
     };
     // console.log('sell options', data);
-    connect.event.emit('checkBalance', options);
-    connect.event.subscribe('returnBalance', (balance) => {
-        console.log('bal', balance.balance, 'amount', data.amount * data.price);
-      if (balance.balance >= data.amount * data.price) {
-        console.log('fire', data);
-        connect.event.unsubscribe('transactionBuy');
-        connect.event.unsubscribe('returnBalance');
+    // connect.event.emit('checkBalance', options);
+    // connect.event.subscribe('returnBalance', (balance) => {
+    //     console.log('bal', balance.balance, 'amount', data.amount * data.price);
+    //   if (balance.balance >= data.amount * data.price) {
+    //     console.log('fire', data);
+    //     connect.event.unsubscribe('transactionBuy');
+    //     connect.event.unsubscribe('returnBalance');
         sell(connect, data, openBuy, openSell, transactionHistory);
-      } else {
-        console.log('NOT ENOUGH MONEY!');
-      }
-    });
+    //   } else {
+    //     console.log('NOT ENOUGH MONEY!');
+    //   }
+    // });
   });
 }
 
