@@ -1,6 +1,5 @@
 const path = require('path');
 const port = 3002;
-const runTest = require('../test/run-tests.js');
 const deepstream = require('deepstream.io-client-js');
 const deepstreamServer = process.env.NODE_ENV === 'prod' ? 'deepstream' : 'localhost';
 const auth = process.env.NODE_ENV === 'prod' ? {
@@ -17,6 +16,8 @@ if (process.env.NODE_ENV === 'dev') {
   const app = express();
   const path = require('path');
   const port = 3002;
+  const runTest = require('../test/run-tests.js');
+
 
   app.use(express.static(path.join(__dirname, '../client')));
 
@@ -34,7 +35,7 @@ let openSell = connect.record.getList('openSell');
 let transactionHistory = connect.record.getList('transactionHistory');
 
 // Run sample tests
-runTest(openBuy, openSell, transactionHistory, connect);
+// runTest(openBuy, openSell, transactionHistory, connect);
 
 /** Invoke Event Listeners **/
 events.initTransactionBuy(connect, openBuy, openSell, transactionHistory);
