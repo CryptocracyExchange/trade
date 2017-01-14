@@ -84,7 +84,7 @@ describe('Transactions', function() {
       setTimeout(function() {
         expect(openOrders.getEntries().length).to.be.equal(2);
         done();
-      }, 5);
+      }, 20);
     });
     it('should fulfill a sell order if the amount matches the buy order', function(done) {
       let buyData = {
@@ -101,7 +101,7 @@ describe('Transactions', function() {
         expect(transactionHistory.getEntries().length).to.be.equal(2);
         expect(openOrders.getEntries().length).to.be.equal(1);
         done();
-      }, 10);
+      }, 20);
     });
     it('if sell supply < buy demand', function(done) {
       let buyData = {
@@ -130,7 +130,7 @@ describe('Transactions', function() {
         expect(transactionHistory.getEntries().length).to.be.equal(4);
         expect(openOrders.getEntries().length).to.be.equal(2);
         done();
-      }, 20);
+      }, 30);
     });
     it('if sell supply > buy demand', function(done) {
       let buyData = {
@@ -147,7 +147,7 @@ describe('Transactions', function() {
         expect(transactionHistory.getEntries().length).to.be.equal(6);
         expect(openOrders.getEntries().length).to.be.equal(2);
         done();
-      }, 20);
+      }, 30);
     });
   });
   describe('Sell', function() {
@@ -182,7 +182,7 @@ describe('Transactions', function() {
         expect(transactionHistory.getEntries().length).to.be.equal(8);
         expect(openOrders.getEntries().length).to.be.equal(2);
         done();
-      }, 20);
+      }, 30);
     });
     it('if buy supply < sell demand', function(done) {
       let sellData = {
