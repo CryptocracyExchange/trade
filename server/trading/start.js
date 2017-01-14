@@ -28,7 +28,7 @@ Provider.prototype.log = function (message, level) {
   const date = new Date();
   const time = `${date.toLocaleTimeString()}:${date.getMilliseconds()}`;
 
-  console.log(`${time}>Trade::${message}`);
+  console.log(`${time}::Trade::${message}`);
 };
 
 Provider.prototype._initialiseDeepstreamClient = function () {
