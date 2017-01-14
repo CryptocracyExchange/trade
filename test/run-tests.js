@@ -13,7 +13,7 @@ colors.setTheme({
   error: 'red'
 });
 
-module.exports = function(b, s, t, connect) {
+module.exports = function(o, t, connect) {
   const createList = (x, type, num, user) => {
     x.whenReady((newList) => {
       for (let h = 0; h < num; h++) {
@@ -67,15 +67,13 @@ module.exports = function(b, s, t, connect) {
   // createList(b, 'buy', 5, 'harry');
   // createList(s, 'sell', 5, 'nick');
 
-  dispList(b, 'buy', colors.info);
-  dispList(s, 'sell', colors.warn);
+  dispList(o, 'orders', colors.info);
   dispList(t, 'transactions', colors.silly);
 
   // /** Delete both transaction histories **/
 
   // del(t);
-  // del(b);
-  // del(s);
+  // del(o);
 
   /** END TEST **/
 };

@@ -16,8 +16,6 @@ if (process.env.NODE_ENV === 'dev') {
   const app = express();
   const path = require('path');
   const port = 3002;
-  const runTest = require('../test/run-tests.js');
-
 
   app.use(express.static(path.join(__dirname, '../client')));
 
@@ -26,17 +24,14 @@ if (process.env.NODE_ENV === 'dev') {
 }
 
 /** Create OPEN and TRANSACTION HISTORY lists **/
-
-// Open Buy Orders
-let openBuy = connect.record.getList('openBuy');
-// Open Sell Orders
-let openSell = connect.record.getList('openSell');
+// Open Orders
+let openOrders = connect.record.getList('openOrders');
 // Transaction History
 let transactionHistory = connect.record.getList('transactionHistory');
 
 // Run sample tests
-// runTest(openBuy, openSell, transactionHistory, connect);
+// const runTest = require('../test/run-tests.js');
+// runTest(openOrders, transactionHistory, connect);
 
-/** Invoke Event Listeners **/
-events.initTransactionBuy(connect, openBuy, openSell, transactionHistory);
-events.initTransactionSell(connect, openBuy, openSell, transactionHistory);
+/** Invoke Event Listener **/
+events.initTransaction(connect, openOrders, transactionHistory);
