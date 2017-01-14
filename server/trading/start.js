@@ -1,8 +1,89 @@
 const _ = require('lodash');
+const DeepstreamClient = require('deepstream.io-client-js');
+const EventEmitter = require('events').EventEmitter;
+const util = require('util');
+
+const Provider = function (config) {
+  this.isReady = false;
+  this._config = config;
+  this._logLevel = config.logLevel !== undefined ? config.logLevel : 1;
+  this._deepstreamClient = null;
+};
+
+util.inherits(Provider, EventEmitter);
+
+Provider.prototype.start = function () {
+  this._initialiseDeepstreamClient();
+};
+
+Provider.prototype.stop = function () {
+  this._deepstreamClient.close();
+};
+
+Provider.prototype.log = function (message, level) {
+  if (this._logLevel < level) {
+    return;
+  }
+
+  const date = new Date();
+  const time = `${date.toLocaleTimeString()}:${date.getMilliseconds()}`;
+
+  console.log(`${time}>Trade::${message}`);
+};
+
+Provider.prototype._initialiseDeepstreamClient = function () {
+  this.log('Initialising Deepstream connection', 1);
+
+  if (this._config.deepstreamClient) {
+    this._deepstreamClient = this._config.deepstreamClient;
+    this.log('Deepstream connection established', 1);
+    this._ready();
+  } else {
+    if (!this._config.deepstreamUrl) {
+      throw new Error('Can\'t connect to deepstream, neither deepstreamClient nor deepstreamUrl were provided', 1);
+    }
+
+    if (!this._config.deepstreamCredentials) {
+      throw new Error('Missing configuration parameter deepstreamCredentials', 1);
+    }
+
+    this._deepstreamClient = new DeepstreamClient(this._config.deepstreamUrl);
+    this._deepstreamClient.on('error', (error) => {
+      console.log(error);
+    });
+    this._deepstreamClient.login(
+      this._config.deepstreamCredentials,
+      this._onDeepstreamLogin.bind(this)
+      );
+  }
+};
+
+Provider.prototype._onDeepstreamLogin = function (success, error, message) {
+  if (success) {
+    this.log('Connection to deepstream established', 1);
+    this._ready();
+  } else {
+    this.log(`Can't connect to deepstream: ${message}`, 1);
+  }
+};
+
+Provider.prototype._ready = function () {
+  /** Create OPEN and TRANSACTION HISTORY lists **/
+  // Open Orders
+  let openOrders = this._deepstreamClient.record.getList('openOrders');
+  // Transaction History
+  let transactionHistory = this._deepstreamClient.record.getList('transactionHistory');
+  /** Invoke Event Listener **/
+  this._initTransaction(openOrders, transactionHistory);
+
+  this.log('trade provider ready', 1);
+  this.isReady = true;
+  this.emit('ready');
+};
 
 // Buy Transaction Listener
-const initTransaction = (connect, openOrders, transactionHistory) => {
-  connect.event.subscribe('transaction', (data) => {
+Provider.prototype._initTransaction = function (openOrders, transactionHistory) {
+  this._deepstreamClient.event.subscribe('transaction', (data) => {
     let options = {
       userID: data.userID,
       currency: data.currency,
@@ -12,13 +93,12 @@ const initTransaction = (connect, openOrders, transactionHistory) => {
 
     data.currFrom = 'BTC';
     data.currTo = 'LTC';
-    connect.event.emit('checkBalance', options);
-    connect.event.subscribe('returnBalance', (balance) => {
-      // console.log('bal', balance, 'data', data)
+    this._deepstreamClient.event.emit('checkBalance', options);
+    this._deepstreamClient.event.subscribe('returnBalance', (balance) => {
       if (balance.balance >= data.amount * data.price) {
-        connect.event.unsubscribe('transaction');
-        connect.event.unsubscribe('returnBalance');
-        buy(connect, data, openOrders, transactionHistory);
+        this._deepstreamClient.event.unsubscribe('transaction');
+        this._deepstreamClient.event.unsubscribe('returnBalance');
+        this._buy(this._deepstreamClient, data, openOrders, transactionHistory);
       } else {
         console.log('NOT ENOUGH MONEY!');
       }
@@ -27,7 +107,7 @@ const initTransaction = (connect, openOrders, transactionHistory) => {
 }
 
 // Define the buy method
-const buy = (connect, data, openOrders, transactionHistory) => {
+Provider.prototype._buy = function (connect, data, openOrders, transactionHistory) {
   // Creates unique ID
   let unique = connect.getUid();
   // Creates new buy record
@@ -508,7 +588,4 @@ const buy = (connect, data, openOrders, transactionHistory) => {
   });
 };
 
-module.exports = {
-  buy: buy,
-  initTransaction: initTransaction
-};
+module.exports = Provider;
