@@ -90,9 +90,6 @@ Provider.prototype._initTransaction = function (openOrders, transactionHistory) 
       update: data.update,
       balanceType: 'available'
     };
-
-    data.currFrom = 'BTC';
-    data.currTo = 'LTC';
     this._deepstreamClient.event.emit('checkBalance', options);
     this._deepstreamClient.event.subscribe('returnBalance', (balance) => {
       if (balance.balance >= data.amount * data.price) {
@@ -108,6 +105,77 @@ Provider.prototype._initTransaction = function (openOrders, transactionHistory) 
 
 // Define the buy method
 Provider.prototype._buy = function (connect, data, openOrders, transactionHistory) {
+  let settingBuyHistRecord = (master, newRecord, order, diff, connect, data) => {
+    master.set({
+      userID: newRecord.get('userID'),
+      price: order.get('price'),
+      currency: newRecord.get('currency'),
+      type: 'buy',
+      currTo: newRecord.get('currTo'),
+      currFrom: newRecord.get('currFrom'),
+      amount: diff.get('amount'),
+      from: order.name,
+      originalId: newRecord.name
+    }, err => {
+      if (err) {
+        console.log('buy', err);
+      } else {
+        data.balanceType = 'actual';
+        data.userID = newRecord.get('userID');
+        connect.event.emit('updateBalance', data);
+        connect.record.getRecord(`rates/${newRecord.get('currFrom')}${newRecord.get('currTo')}`).whenReady((rateRec) => {
+          rateRec.set('rate', order.get('price'));
+        });
+      }
+    });
+  };
+
+  let settingSellHistRecord = (master, newRecord, order, diff, connect, data) => {
+    master.set({
+      userID: order.get('userID'),
+      price: order.get('price'),
+      currency: order.get('currency'),
+      type: 'sell',
+      currTo: order.get('currTo'),
+      currFrom: order.get('currFrom'),
+      amount: diff.get('amount'),
+      to: newRecord.name,
+      originalId: order.name
+    }, err => {
+      if (err) {
+        console.log('sell', err);
+      } else {
+        data.balanceType = 'actual';
+        data.userID = order.get('userID');
+        connect.event.emit('updateBalance', data);
+      }
+    });
+  };
+
+  let emitClosedBuy = (connect, newRecord, order) => {
+    connect.event.emit('closedSale', {
+      userID: newRecord.get('userID'),
+      price: order.get('price'),
+      currency: newRecord.get('currency'),
+      type: 'buy',
+      amount: newRecord.get('amount'),
+      from: order.name,
+      originalId: newRecord.name
+    });
+  };
+
+  let emitClosedSell = (connect, newRecord, order) => {
+    connect.event.emit('closedSale', {
+      userID: order.get('userID'),
+      price: order.get('price'),
+      currency: order.get('currency'),
+      type: 'sell',
+      amount: order.get('amount'),
+      to: newRecord.name,
+      originalId: order.name
+    });
+  };
+
   // Creates unique ID
   let unique = connect.getUid();
   // Creates new buy record
@@ -141,7 +209,7 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
           let entries = list.getEntries();
           let tempArr = [];
 
-          for (let i = 0; i < entries.length; i++) {
+          for (let i = 0, len = entries.length; i < len; i++) {
             connect.record.getRecord(entries[i]).whenReady((record) => {
               let buying = record.get();
               buying.name = record.name;
@@ -164,9 +232,7 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
         openOrders.whenReady((orderList) => {
           // Get array of open sell orders
           let orders = orderList.getEntries();
-          var diff,
-              noDuplicate = true;
-          // console.log("looking through the order list");
+          var diff, noDuplicate = true;
           // Iterate through every open order in the openOrders list
           for (let n = 0; n < orders.length; n++) {
             // Create new Transaction History records for each buy and sell
@@ -176,20 +242,14 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
             connect.record.getRecord(orders[n]).whenReady((order) => {
               // Filter currency that the buy order is exchanging to
               if ((order.get('currTo') === data.currFrom) && (order.get('currFrom') === data.currTo)) {
-                // console.log('currency match!');
                 // Initiate the transactionHistory list
                 transactionHistory.whenReady((transHist) => {
                   // Initiate the new buy history record
                   newBuyHist.whenReady((newHistBuyRecord) => {
                     // Initiate the new sell history record
                     newSellHist.whenReady((newHistSellRecord) => {
-                      // console.log('loop open orders', order.get());
-                      // console.log('new orders', newRecord.get());
-                      // console.log('hola!');
                       // Match each buy to a sell and vice versa
                       if (order.get('type') !== newRecord.get('type')){
-                        // console.log('match', order.get());
-                        // console.log('match2', newRecord.get());
                         if (order.get('type') === 'sell') {
                           if (order.get() && order.get('amount') && (order.get('price') <= newRecord.get('price')) && noDuplicate) {
                             if ((order.get('amount') == newRecord.get('amount')) && noDuplicate) {
@@ -197,64 +257,15 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
                               console.log('sell amount = buy amount');
                               newRecord.set('amount', newRecord.get('amount'));
                               order.set('amount', newRecord.get('amount'));
-                              newHistBuyRecord.set({
-                                userID: newRecord.get('userID'),
-                                price: order.get('price'),
-                                currency: newRecord.get('currency'),
-                                type: 'buy',
-                                currTo: newRecord.get('currTo'),
-                                currFrom: newRecord.get('currFrom'),
-                                amount: newRecord.get('amount'),
-                                from: order.name,
-                                originalId: newRecord.name
-                              }, err => {
-                                if (err) {
-                                  console.log('buy', err);
-                                } else {
-                                  data.balanceType = 'actual';
-                                  data.userID = newRecord.get('userID');
-                                  connect.event.emit('updateBalance', data);
-                                  connect.record.getRecord(`rates/${newRecord.get('currFrom')}${newRecord.get('currTo')}`).whenReady((rateRec) => {
-                                    rateRec.set('rate', order.get('price'));
-                                  });
-                                }
-                              });
-                              newHistSellRecord.set({
-                                userID: order.get('userID'),
-                                price: order.get('price'),
-                                currency: order.get('currency'),
-                                type: 'sell',
-                                currTo: order.get('currTo'),
-                                currFrom: order.get('currFrom'),
-                                amount: order.get('amount'),
-                                to: newRecord.name,
-                                originalId: order.name
-                              }, err => {
-                                if (err) {
-                                  console.log('sell', err);
-                                } else {
-                                  data.balanceType = 'actual';
-                                  data.userID = order.get('userID');
-                                  connect.event.emit('updateBalance', data);
-                                }
-                              });
+                              settingBuyHistRecord(newHistBuyRecord, newRecord, order, newRecord, connect, data);
+                              settingSellHistRecord(newHistSellRecord, newRecord, order, order, connect, data);
                               transHist.addEntry(newHistSellRecord.name);
                               transHist.addEntry(newHistBuyRecord.name);
                               orderList.removeEntry(order.name);
                               orderList.removeEntry(newRecord.name);
                               noDuplicate = false;
-
                               // // Alert closed sale
-                              connect.event.emit('closedSale', {
-                                userID: newRecord.get('userID'),
-                                price: order.get('price'),
-                                currency: newRecord.get('currency'),
-                                type: 'buy',
-                                amount: newRecord.get('amount'),
-                                from: order.name,
-                                originalId: newRecord.name
-                              });
-
+                              emitClosedBuy(connect, newRecord, order);
                             } else if (order.get('amount') < newRecord.get('amount')) {
                               // Supply < Demand
                               diff = newRecord.get('amount') - order.get('amount');
@@ -263,314 +274,77 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
                                 console.log('buyrecord: ', newRecord.name, newRecord.get());
                                 console.log('sellrecord: ', order.name, order.get());
                                 // Setting new history records
-                                newHistBuyRecord.set({
-                                  userID: newRecord.get('userID'),
-                                  price: order.get('price'),
-                                  currency: newRecord.get('currency'),
-                                  type: 'buy',
-                                  currTo: newRecord.get('currTo'),
-                                  currFrom: newRecord.get('currFrom'),
-                                  amount: order.get('amount'),
-                                  from: order.name,
-                                  originalId: newRecord.name
-                                }, err => {
-                                  if (err) {
-                                    console.log('buy', err);
-                                  } else {
-                                    data.balanceType = 'actual';
-                                    data.userID = newRecord.get('userID');
-                                    connect.event.emit('updateBalance', data);
-                                    console.log('setting new buy', newHistBuyRecord.name);
-                                    connect.record.getRecord(`rates/${newRecord.get('currFrom')}${newRecord.get('currTo')}`).whenReady((rateRec) => {
-                                      rateRec.set('rate', order.get('price'));
-                                    });
-                                  }
-                                });
-                                newHistSellRecord.set({
-                                  userID: order.get('userID'),
-                                  price: order.get('price'),
-                                  currency: order.get('currency'),
-                                  type: 'sell',
-                                  currTo: order.get('currTo'),
-                                  currFrom: order.get('currFrom'),
-                                  amount: order.get('amount'),
-                                  to: newRecord.name,
-                                  originalId: order.name
-                                }, err => {
-                                  if (err) {
-                                    console.log('sell', err);
-                                  } else {
-                                    data.balanceType = 'actual';
-                                    data.userID = order.get('userID');
-                                    connect.event.emit('updateBalance', data);
-                                    console.log('setting new sell', newHistSellRecord.name);
-                                  }
-                                });
+                                settingBuyHistRecord(newHistBuyRecord, newRecord, order, order, connect, data);
+                                settingSellHistRecord(newHistSellRecord, newRecord, order, order, connect, data);
                                 transHist.addEntry(newHistBuyRecord.name);
                                 transHist.addEntry(newHistSellRecord.name);
                                 orderList.removeEntry(order.name);
                                 newRecord.set('amount', diff);
                                 // // Alert closed sale
-                                connect.event.emit('closedSale', {
-                                  userID: order.get('userID'),
-                                  price: order.get('price'),
-                                  currency: order.get('currency'),
-                                  type: 'sell',
-                                  amount: order.get('amount'),
-                                  to: newRecord.name,
-                                  originalId: order.name
-                                });
-                              }
-                            } else if (order.get('amount') > newRecord.get('amount')){
-                              // Supply > Demand
-                              diff = order.get('amount') - newRecord.get('amount');
-                              if (diff > 0) {
-                                console.log('if amount supply > demand && diff > 0', diff);
-                                newHistBuyRecord.set({
-                                  userID: newRecord.get('userID'),
-                                  price: order.get('price'),
-                                  currency: newRecord.get('currency'),
-                                  type: 'buy',
-                                  currTo: newRecord.get('currTo'),
-                                  currFrom: newRecord.get('currFrom'),
-                                  amount: newRecord.get('amount'),
-                                  from: order.name,
-                                  originalId: newRecord.name
-                                }, err => {
-                                  if (err) {
-                                    console.log('buy', err);
-                                  } else {
-                                    data.balanceType = 'actual';
-                                    data.userID = newRecord.get('userID');
-                                    connect.event.emit('updateBalance', data);
-                                    connect.record.getRecord(`rates/${newRecord.get('currFrom')}${newRecord.get('currTo')}`).whenReady((rateRec) => {
-                                      rateRec.set('rate', order.get('price'));
-                                    });
-                                  }
-                                });
-                                newHistSellRecord.set({
-                                  userID: order.get('userID'),
-                                  price: order.get('price'),
-                                  currency: order.get('currency'),
-                                  type: 'sell',
-                                  currTo: order.get('currTo'),
-                                  currFrom: order.get('currFrom'),
-                                  amount: newRecord.get('amount'),
-                                  to: newRecord.name,
-                                  originalId: order.name
-                                }, err => {
-                                  if (err) {
-                                    console.log('sell', err);
-                                  } else {
-                                    data.balanceType = 'actual';
-                                    data.userID = order.get('userID');
-                                    connect.event.emit('updateBalance', data);
-                                  }
-                                });
-                                transHist.addEntry(newHistSellRecord.name);
-                                transHist.addEntry(newHistBuyRecord.name);
-                                orderList.removeEntry(newRecord.name);
-                                order.set('amount', diff);
-                                // // Alert closed sale
-                                connect.event.emit('closedSale', {
-                                  userID: newRecord.get('userID'),
-                                  price: order.get('price'),
-                                  currency: newRecord.get('currency'),
-                                  type: 'buy',
-                                  amount: newRecord.get('amount'),
-                                  from: order.name,
-                                  originalId: newRecord.name
-                                });
-                              }
-                            }
-                          }
-                        } else {
-                          if (
-                            order.get() &&
-                            order.get('amount') &&
-                            (order.get('price') >= newRecord.get('price')) &&
-                            noDuplicate)
-                            {
-                            if ((order.get('amount') == newRecord.get('amount')) && noDuplicate) {
-                              // Supply == Demand
-                              console.log('sell amount = buy amount');
-                              newRecord.set('amount', newRecord.get('amount'));
-                              order.set('amount', newRecord.get('amount'));
-                              newHistBuyRecord.set({
-                                userID: newRecord.get('userID'),
-                                price: order.get('price'),
-                                currency: newRecord.get('currency'),
-                                type: 'buy',
-                                currTo: newRecord.get('currTo'),
-                                currFrom: newRecord.get('currFrom'),
-                                amount: newRecord.get('amount'),
-                                from: order.name,
-                                originalId: newRecord.name
-                              }, err => {
-                                if (err) {
-                                  console.log('buy', err);
-                                } else {
-                                  data.balanceType = 'actual';
-                                  data.userID = newRecord.get('userID');
-                                  connect.event.emit('updateBalance', data);
-                                }
-                              });
-                              newHistSellRecord.set({
-                                userID: order.get('userID'),
-                                price: order.get('price'),
-                                currency: order.get('currency'),
-                                type: 'sell',
-                                currTo: order.get('currTo'),
-                                currFrom: order.get('currFrom'),
-                                amount: order.get('amount'),
-                                to: newRecord.name,
-                                originalId: order.name
-                              }, err => {
-                                if (err) {
-                                  console.log('sell', err);
-                                } else {
-                                  data.balanceType = 'actual';
-                                  data.userID = order.get('userID');
-                                  connect.event.emit('updateBalance', data);
-                                }
-                              });
-                              transHist.addEntry(newHistSellRecord.name);
-                              transHist.addEntry(newHistBuyRecord.name);
-                              orderList.removeEntry(order.name);
-                              orderList.removeEntry(newRecord.name);
-                              noDuplicate = false;
-
-                              // // Alert closed sale
-                              connect.event.emit('closedSale', {
-                                userID: newRecord.get('userID'),
-                                price: order.get('price'),
-                                currency: newRecord.get('currency'),
-                                type: 'buy',
-                                amount: newRecord.get('amount'),
-                                from: order.name,
-                                originalId: newRecord.name
-                              });
-
-                            } else if (order.get('amount') < newRecord.get('amount')) {
-                              // Supply < Demand
-                              diff = newRecord.get('amount') - order.get('amount');
-                              if (diff > 0) {
-                                console.log('if amount supply < demand && diff > 0', diff);
-                                console.log('buyrecord: ', newRecord.name, newRecord.get());
-                                console.log('sellrecord: ', order.name, order.get());
-                                // Setting new history records
-                                newHistBuyRecord.set({
-                                  userID: newRecord.get('userID'),
-                                  price: order.get('price'),
-                                  currency: newRecord.get('currency'),
-                                  type: 'buy',
-                                  currTo: newRecord.get('currTo'),
-                                  currFrom: newRecord.get('currFrom'),
-                                  amount: order.get('amount'),
-                                  from: order.name,
-                                  originalId: newRecord.name
-                                }, err => {
-                                  if (err) {
-                                    console.log('buy', err);
-                                  } else {
-                                    data.balanceType = 'actual';
-                                    data.userID = newRecord.get('userID');
-                                    connect.event.emit('updateBalance', data);
-                                    console.log('setting new buy', newHistBuyRecord.name);
-                                  }
-                                });
-                                newHistSellRecord.set({
-                                  userID: order.get('userID'),
-                                  price: order.get('price'),
-                                  currency: order.get('currency'),
-                                  type: 'sell',
-                                  currTo: order.get('currTo'),
-                                  currFrom: order.get('currFrom'),
-                                  amount: order.get('amount'),
-                                  to: newRecord.name,
-                                  originalId: order.name
-                                }, err => {
-                                  if (err) {
-                                    console.log('sell', err);
-                                  } else {
-                                    data.balanceType = 'actual';
-                                    data.userID = order.get('userID');
-                                    connect.event.emit('updateBalance', data);
-                                    console.log('setting new sell', newHistSellRecord.name);
-                                  }
-                                });
-                                transHist.addEntry(newHistBuyRecord.name);
-                                transHist.addEntry(newHistSellRecord.name);
-                                orderList.removeEntry(order.name);
-                                newRecord.set('amount', diff);
-                                // // Alert closed sale
-                                connect.event.emit('closedSale', {
-                                  userID: order.get('userID'),
-                                  price: order.get('price'),
-                                  currency: order.get('currency'),
-                                  type: 'sell',
-                                  amount: order.get('amount'),
-                                  to: newRecord.name,
-                                  originalId: order.name
-                                });
+                                emitClosedSell(connect, newRecord, order);
                               }
                             } else if (order.get('amount') > newRecord.get('amount')) {
                               // Supply > Demand
                               diff = order.get('amount') - newRecord.get('amount');
                               if (diff > 0) {
                                 console.log('if amount supply > demand && diff > 0', diff);
-                                newHistBuyRecord.set({
-                                  userID: newRecord.get('userID'),
-                                  price: order.get('price'),
-                                  currency: newRecord.get('currency'),
-                                  type: 'buy',
-                                  currTo: newRecord.get('currTo'),
-                                  currFrom: newRecord.get('currFrom'),
-                                  amount: newRecord.get('amount'),
-                                  from: order.name,
-                                  originalId: newRecord.name
-                                }, err => {
-                                  if (err) {
-                                    console.log('buy', err);
-                                  } else {
-                                    data.balanceType = 'actual';
-                                    data.userID = newRecord.get('userID');
-                                    connect.event.emit('updateBalance', data);
-                                  }
-                                });
-                                newHistSellRecord.set({
-                                  userID: order.get('userID'),
-                                  price: order.get('price'),
-                                  currency: order.get('currency'),
-                                  type: 'sell',
-                                  currTo: order.get('currTo'),
-                                  currFrom: order.get('currFrom'),
-                                  amount: newRecord.get('amount'),
-                                  to: newRecord.name,
-                                  originalId: order.name
-                                }, err => {
-                                  if (err) {
-                                    console.log('sell', err);
-                                  } else {
-                                    data.balanceType = 'actual';
-                                    data.userID = order.get('userID');
-                                    connect.event.emit('updateBalance', data);
-                                  }
-                                });
+                                settingBuyHistRecord(newHistBuyRecord, newRecord, order, newRecord, connect, data);
+                                settingSellHistRecord(newHistSellRecord, newRecord, order, newRecord, connect, data);
                                 transHist.addEntry(newHistSellRecord.name);
                                 transHist.addEntry(newHistBuyRecord.name);
                                 orderList.removeEntry(newRecord.name);
                                 order.set('amount', diff);
                                 // // Alert closed sale
-                                connect.event.emit('closedSale', {
-                                  userID: newRecord.get('userID'),
-                                  price: order.get('price'),
-                                  currency: newRecord.get('currency'),
-                                  type: 'buy',
-                                  amount: newRecord.get('amount'),
-                                  from: order.name,
-                                  originalId: newRecord.name
-                                });
+                                emitClosedBuy(connect, newRecord, order);
+                              }
+                            }
+                          }
+                        } else {
+                          if (order.get() && order.get('amount') && (order.get('price') >= newRecord.get('price')) && noDuplicate) {
+                            if ((order.get('amount') == newRecord.get('amount')) && noDuplicate) {
+                              // Supply == Demand
+                              console.log('sell amount = buy amount');
+                              newRecord.set('amount', newRecord.get('amount'));
+                              order.set('amount', newRecord.get('amount'));
+                              settingBuyHistRecord(newHistBuyRecord, newRecord, order, newRecord, connect, data);
+                              settingSellHistRecord(newHistSellRecord, newRecord, order, order, connect, data);
+                              transHist.addEntry(newHistSellRecord.name);
+                              transHist.addEntry(newHistBuyRecord.name);
+                              orderList.removeEntry(order.name);
+                              orderList.removeEntry(newRecord.name);
+                              noDuplicate = false;
+                              // // Alert closed sale
+                              emitClosedBuy(connect, newRecord, order);
+                            } else if (order.get('amount') < newRecord.get('amount')) {
+                              // Supply < Demand
+                              diff = newRecord.get('amount') - order.get('amount');
+                              if (diff > 0) {
+                                console.log('if amount supply < demand && diff > 0', diff);
+                                console.log('buyrecord: ', newRecord.name, newRecord.get());
+                                console.log('sellrecord: ', order.name, order.get());
+                                // Setting new history records
+                                settingBuyHistRecord(newHistBuyRecord, newRecord, order, order, connect, data);
+                                settingSellHistRecord(newHistSellRecord, newRecord, order, order, connect, data);
+                                transHist.addEntry(newHistBuyRecord.name);
+                                transHist.addEntry(newHistSellRecord.name);
+                                orderList.removeEntry(order.name);
+                                newRecord.set('amount', diff);
+                                // // Alert closed sale
+                                emitClosedSell(connect, newRecord, order);
+                              }
+                            } else if (order.get('amount') > newRecord.get('amount')) {
+                              // Supply > Demand
+                              diff = order.get('amount') - newRecord.get('amount');
+                              if (diff > 0) {
+                                console.log('if amount supply > demand && diff > 0', diff);
+                                settingBuyHistRecord(newHistBuyRecord, newRecord, order, newRecord, connect, data);
+                                settingSellHistRecord(newHistSellRecord, newRecord, order, newRecord, connect, data);
+                                transHist.addEntry(newHistSellRecord.name);
+                                transHist.addEntry(newHistBuyRecord.name);
+                                orderList.removeEntry(newRecord.name);
+                                order.set('amount', diff);
+                                // // Alert closed sale
+                                emitClosedBuy(connect, newRecord, order);
                               }
                             }
                           }

@@ -6,20 +6,24 @@ const expect = chai.expect;
 // DS.io
 const Deepstream = require('deepstream.io');
 const server = new Deepstream({port:6104});
-const trade = require('../server/trading/start.js');
-var connect, ds, openOrders, transactionHistory;
+const TradeProvider = require('../server/trading/start');
+var ds, openOrders, transactionHistory;
+
+const trade = new TradeProvider({
+  logLevel: 3,
+  deepstreamUrl: 'localhost:6104',
+  deepstreamCredentials: {}
+});
 
 before(function(done) {
   server.start();
-  setTimeout(function() {
-    ds = require('deepstream.io-client-js');
-    connect = ds('localhost:6104').login();
-    openOrders = connect.record.getList('openOrders');
-    transactionHistory = connect.record.getList('transactionHistory');
-
+  trade.start();
+  trade.on('ready', () => {
+    openOrders = trade._deepstreamClient.record.getList('openOrders');
+    transactionHistory = trade._deepstreamClient.record.getList('transactionHistory');
     // Creates Sample Open Buy and Sell List
     openOrders.whenReady(function(newList) {
-      let newSellRecord1 = connect.record.getRecord(`open/1`);
+      let newSellRecord1 = trade._deepstreamClient.record.getRecord(`open/1`);
       newSellRecord1.whenReady((newRec) => {
         newRec.set({
           userID: 'nick',
@@ -31,15 +35,15 @@ before(function(done) {
           currTo: 'LTC'
         }, function(err) {
           newList.addEntry(`open/1`);
+          done();
         });
       });
-      done();
     });
-  },1500);
+  });
 });
 
 after(function(done) {
-  connect.close();
+  trade._deepstreamClient.close();
   server.stop();
   done();
 });
@@ -47,7 +51,7 @@ after(function(done) {
 describe('Transactions', function() {
   describe('Init', function() {
     it('should create a new record', function() {
-      let newBuyRecord = connect.record.getRecord('test');
+      let newBuyRecord = trade._deepstreamClient.record.getRecord('test');
       newBuyRecord.whenReady(function(newRec) {
         newRec.set('test', 'test');
         let test = newRec.get('test');
@@ -66,8 +70,6 @@ describe('Transactions', function() {
 
 
   describe('Buy', function() {
-    this.timeout(800);
-
     it('should create a new buy order and store into openBuy list', function(done) {
       let buyData = {
         userID: 'mikel',
@@ -78,7 +80,7 @@ describe('Transactions', function() {
         currFrom: 'BTC',
         currTo: 'LTC'
       };
-      trade.buy(connect, buyData, openOrders, transactionHistory);
+      trade._buy(trade._deepstreamClient, buyData, openOrders, transactionHistory);
       setTimeout(function() {
         expect(openOrders.getEntries().length).to.be.equal(2);
         done();
@@ -94,13 +96,12 @@ describe('Transactions', function() {
         currFrom: 'LTC',
         currTo: 'BTC'
       };
-      trade.buy(connect, buyData, openOrders, transactionHistory);
+      trade._buy(trade._deepstreamClient, buyData, openOrders, transactionHistory);
       setTimeout(function() {
-        console.log('TRANSACTIONHISTORY', transactionHistory.getEntries());
         expect(transactionHistory.getEntries().length).to.be.equal(2);
         expect(openOrders.getEntries().length).to.be.equal(1);
         done();
-      }, 30);
+      }, 10);
     });
     it('if sell supply < buy demand', function(done) {
       let buyData = {
@@ -122,14 +123,14 @@ describe('Transactions', function() {
         currTo: 'LTC'
       };
 
-      trade.buy(connect, buyData, openOrders, transactionHistory);
-      trade.buy(connect, sellData, openOrders, transactionHistory);
+      trade._buy(trade._deepstreamClient, buyData, openOrders, transactionHistory);
+      trade._buy(trade._deepstreamClient, sellData, openOrders, transactionHistory);
 
       setTimeout(function() {
         expect(transactionHistory.getEntries().length).to.be.equal(4);
         expect(openOrders.getEntries().length).to.be.equal(2);
         done();
-      }, 30);
+      }, 20);
     });
     it('if sell supply > buy demand', function(done) {
       let buyData = {
@@ -141,12 +142,12 @@ describe('Transactions', function() {
         currFrom: 'LTC',
         currTo: 'BTC'
       };
-      trade.buy(connect, buyData, openOrders, transactionHistory);
+      trade._buy(trade._deepstreamClient, buyData, openOrders, transactionHistory);
       setTimeout(function() {
         expect(transactionHistory.getEntries().length).to.be.equal(6);
         expect(openOrders.getEntries().length).to.be.equal(2);
         done();
-      }, 30);
+      }, 20);
     });
   });
   describe('Sell', function() {
@@ -160,7 +161,7 @@ describe('Transactions', function() {
         currFrom: 'BTC',
         currTo: 'LTC'
       };
-      trade.buy(connect, sellData, openOrders, transactionHistory);
+      trade._buy(trade._deepstreamClient, sellData, openOrders, transactionHistory);
       setTimeout(function() {
         expect(openOrders.getEntries().length).to.be.equal(3);
         done();
@@ -176,12 +177,12 @@ describe('Transactions', function() {
         currFrom: 'LTC',
         currTo: 'BTC'
       };
-    trade.buy(connect, sellData, openOrders, transactionHistory);
+    trade._buy(trade._deepstreamClient, sellData, openOrders, transactionHistory);
       setTimeout(function() {
         expect(transactionHistory.getEntries().length).to.be.equal(8);
         expect(openOrders.getEntries().length).to.be.equal(2);
         done();
-      }, 30);
+      }, 20);
     });
     it('if buy supply < sell demand', function(done) {
       let sellData = {
@@ -202,13 +203,13 @@ describe('Transactions', function() {
         currFrom: 'BTC',
         currTo: 'LTC'
       };
-      trade.buy(connect, sellData, openOrders, transactionHistory);
+      trade._buy(trade._deepstreamClient, sellData, openOrders, transactionHistory);
       setTimeout(function() {
         expect(transactionHistory.getEntries().length).to.be.equal(10);
         expect(openOrders.getEntries().length).to.be.equal(2);
-        trade.buy(connect, buyData, openOrders, transactionHistory);
+        trade._buy(trade._deepstreamClient, buyData, openOrders, transactionHistory);
         done();
-      }, 30);
+      }, 20);
     });
     it('if buy supply > sell demand', function(done) {
 
@@ -221,12 +222,12 @@ describe('Transactions', function() {
         currFrom: 'LTC',
         currTo: 'BTC'
       };
-      trade.buy(connect, sellData, openOrders, transactionHistory);
+      trade._buy(trade._deepstreamClient, sellData, openOrders, transactionHistory);
       setTimeout(function() {
         expect(transactionHistory.getEntries().length).to.be.equal(12);
         expect(openOrders.getEntries().length).to.be.equal(3);
         done();
-      }, 30);
+      }, 20);
     });
   });
 });
