@@ -160,7 +160,8 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
       type: 'buy',
       amount: newRecord.get('amount'),
       from: order.name,
-      originalId: newRecord.name
+      originalId: newRecord.name,
+      date: newRecord.get('date')
     });
   };
 
@@ -172,7 +173,8 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
       type: 'sell',
       amount: order.get('amount'),
       to: newRecord.name,
-      originalId: order.name
+      originalId: order.name,
+      date: newRecord.get('date')
     });
   };
 
