@@ -86,7 +86,7 @@ Provider.prototype._initTransaction = function (openOrders, transactionHistory) 
   this._deepstreamClient.event.subscribe('transaction', (data) => {
     let options = {
       userID: data.userID,
-      currency: data.currency,
+      currency: data.currFrom,
       update: data.update,
       balanceType: 'available'
     };
