@@ -105,6 +105,12 @@ Provider.prototype._initTransaction = function (openOrders, transactionHistory) 
 
 // Define the buy method
 Provider.prototype._buy = function (connect, data, openOrders, transactionHistory) {
+
+  let updateBalanceEmit = (connect, data, updated) => {
+    data.currency = updated;
+    connect.event.emit('updateBalance', data);
+  };
+
   let settingBuyHistRecord = (master, newRecord, order, diff, connect, data) => {
     master.set({
       userID: newRecord.get('userID'),
@@ -122,7 +128,8 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
       } else {
         data.balanceType = 'actual';
         data.userID = newRecord.get('userID');
-        connect.event.emit('updateBalance', data);
+        updateBalanceEmit(connect, data, data.currFrom);
+        updateBalanceEmit(connect, data, data.currTo);
         connect.record.getRecord(`rates/${newRecord.get('currFrom')}${newRecord.get('currTo')}`).whenReady((rateRec) => {
           rateRec.set('rate', order.get('price'));
         });
@@ -147,7 +154,8 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
       } else {
         data.balanceType = 'actual';
         data.userID = order.get('userID');
-        connect.event.emit('updateBalance', data);
+        updateBalanceEmit(connect, data, data.currFrom);
+        updateBalanceEmit(connect, data, data.currTo);
       }
     });
   };
@@ -188,7 +196,7 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
       userID: data.userID,
       amount: +data.amount,
       price: +data.price,
-      currency: data.currency,
+      currency: data.currFrom,
       currFrom: data.currFrom,
       currTo: data.currTo,
       type: data.type,
