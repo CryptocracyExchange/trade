@@ -129,6 +129,7 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
         data.balanceType = 'actual';
         data.userID = newRecord.get('userID');
         updateBalanceEmit(connect, data, data.currFrom);
+        data.isExternal = true;
         updateBalanceEmit(connect, data, data.currTo);
         connect.record.getRecord(`rates/${newRecord.get('currFrom')}${newRecord.get('currTo')}`).whenReady((rateRec) => {
           rateRec.set('rate', order.get('price'));
@@ -155,6 +156,7 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
         data.balanceType = 'actual';
         data.userID = order.get('userID');
         updateBalanceEmit(connect, data, data.currFrom);
+        data.isExternal = true;
         updateBalanceEmit(connect, data, data.currTo);
       }
     });
