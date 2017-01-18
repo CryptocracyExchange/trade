@@ -127,6 +127,7 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
   };
 
   let settingBuyHistRecord = (master, newRecord, order, diff, connect, data) => {
+    let newDate = new Date();
     master.set({
       userID: newRecord.get('userID'),
       price: order.get('price'),
@@ -136,6 +137,7 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
       currFrom: newRecord.get('currFrom'),
       amount: diff.get('amount'),
       from: order.name,
+      date: newDate,
       originalId: newRecord.name
     }, err => {
       if (err) {
@@ -154,6 +156,7 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
   };
 
   let settingSellHistRecord = (master, newRecord, order, diff, connect, data) => {
+    let newDate = new Date();
     master.set({
       userID: order.get('userID'),
       price: order.get('price'),
@@ -163,6 +166,7 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
       currFrom: order.get('currFrom'),
       amount: diff.get('amount'),
       to: newRecord.name,
+      date: newDate,
       originalId: order.name
     }, err => {
       if (err) {
@@ -388,6 +392,8 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
               });
             }
           });
+        } else {
+          newRecord.delete();
         }
       }
     });
