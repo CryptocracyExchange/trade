@@ -92,7 +92,7 @@ Provider.prototype._initTransaction = function (openOrders, transactionHistory) 
     };
     this._deepstreamClient.event.emit('checkBalance', options);
     this._deepstreamClient.event.subscribe('returnBalance', (balance) => {
-      if (balance.balance >= data.amount * data.price) {
+      if (balance.balance && (balance.balance >= data.amount * data.price)) {
         console.log('balance returned');
         this._deepstreamClient.event.unsubscribe('returnBalance');
         this._buy(this._deepstreamClient, data, openOrders, transactionHistory);
@@ -106,7 +106,7 @@ Provider.prototype._initTransaction = function (openOrders, transactionHistory) 
 // Define the buy method
 Provider.prototype._buy = function (connect, data, openOrders, transactionHistory) {
 
-  let updateBalanceEmit = (connect, data, updated, type, isExternal) => {
+  let updateBalanceEmit = (connect, data, updated, type, isExternal, rec) => {
     data.currency = updated;
     if (isExternal) {
       data.isExternal = true;
@@ -115,6 +115,13 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
       data.balanceType = type;
       connect.event.emit('updateBalance', data);
     }
+    connect.event.subscribe('returnBalance', (data) => {
+      if (data.success === false) {
+        console.log('data not success');
+        rec.delete();
+        connect.event.emit('tradeFailed', data);
+      }
+    });
   };
 
   let settingBuyHistRecord = (master, newRecord, order, diff, connect, data) => {
@@ -217,7 +224,7 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
 
         // Update user balance after buy order
         data.update = -(+data.amount * +data.price);
-        updateBalanceEmit(connect, data, data.currFrom, 'available', false);
+        updateBalanceEmit(connect, data, data.currFrom, 'available', false, newRecord);
 
         // Push record into open buy transactions
         openOrders.whenReady((list) => {
