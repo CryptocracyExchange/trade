@@ -93,7 +93,7 @@ Provider.prototype._initTransaction = function (openOrders, transactionHistory) 
     this._deepstreamClient.event.emit('checkBalance', options);
     this._deepstreamClient.event.subscribe('returnBalance', (balance) => {
       if (balance.balance >= data.amount * data.price) {
-        this._deepstreamClient.event.unsubscribe('transaction');
+        console.log('balance returned');
         this._deepstreamClient.event.unsubscribe('returnBalance');
         this._buy(this._deepstreamClient, data, openOrders, transactionHistory);
       } else {
@@ -274,7 +274,7 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
                           if (order.get() && order.get('amount') && (order.get('price') <= newRecord.get('price')) && noDuplicate) {
                             if ((order.get('amount') == newRecord.get('amount')) && noDuplicate) {
                               // Supply == Demand
-                              // console.log('sell amount = buy amount');
+                              console.log('sell amount = buy amount');
                               newRecord.set('amount', newRecord.get('amount'));
                               order.set('amount', newRecord.get('amount'));
                               settingBuyHistRecord(newHistBuyRecord, newRecord, order, newRecord, connect, data);
@@ -290,7 +290,7 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
                               // Supply < Demand
                               diff = newRecord.get('amount') - order.get('amount');
                               if (diff > 0) {
-                                // console.log('if amount supply < demand && diff > 0', diff);
+                                console.log('if amount supply < demand && diff > 0', diff);
                                 // console.log('buyrecord: ', newRecord.name, newRecord.get());
                                 // console.log('sellrecord: ', order.name, order.get());
                                 // Setting new history records
@@ -307,7 +307,7 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
                               // Supply > Demand
                               diff = order.get('amount') - newRecord.get('amount');
                               if (diff > 0) {
-                                // console.log('if amount supply > demand && diff > 0', diff);
+                                console.log('if amount supply > demand && diff > 0', diff);
                                 settingBuyHistRecord(newHistBuyRecord, newRecord, order, newRecord, connect, data);
                                 settingSellHistRecord(newHistSellRecord, newRecord, order, newRecord, connect, data);
                                 transHist.addEntry(newHistSellRecord.name);
@@ -323,7 +323,7 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
                           if (order.get() && order.get('amount') && (order.get('price') >= newRecord.get('price')) && noDuplicate) {
                             if ((order.get('amount') == newRecord.get('amount')) && noDuplicate) {
                               // Supply == Demand
-                              // console.log('sell amount = buy amount');
+                              console.log('sell amount = buy amount');
                               newRecord.set('amount', newRecord.get('amount'));
                               order.set('amount', newRecord.get('amount'));
                               settingBuyHistRecord(newHistBuyRecord, newRecord, order, newRecord, connect, data);
@@ -339,7 +339,7 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
                               // Supply < Demand
                               diff = newRecord.get('amount') - order.get('amount');
                               if (diff > 0) {
-                                // console.log('if amount supply < demand && diff > 0', diff);
+                                console.log('if amount supply < demand && diff > 0', diff);
                                 // console.log('buyrecord: ', newRecord.name, newRecord.get());
                                 // console.log('sellrecord: ', order.name, order.get());
                                 // Setting new history records
@@ -356,7 +356,7 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
                               // Supply > Demand
                               diff = order.get('amount') - newRecord.get('amount');
                               if (diff > 0) {
-                                // console.log('if amount supply > demand && diff > 0', diff);
+                                console.log('if amount supply > demand && diff > 0', diff);
                                 settingBuyHistRecord(newHistBuyRecord, newRecord, order, newRecord, connect, data);
                                 settingSellHistRecord(newHistSellRecord, newRecord, order, newRecord, connect, data);
                                 transHist.addEntry(newHistSellRecord.name);
