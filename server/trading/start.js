@@ -106,9 +106,15 @@ Provider.prototype._initTransaction = function (openOrders, transactionHistory) 
 // Define the buy method
 Provider.prototype._buy = function (connect, data, openOrders, transactionHistory) {
 
-  let updateBalanceEmit = (connect, data, updated) => {
+  let updateBalanceEmit = (connect, data, updated, type, isExternal) => {
     data.currency = updated;
-    connect.event.emit('updateBalance', data);
+    if (isExternal) {
+      data.isExternal = true;
+      connect.event.emit('updateBalance', data);
+    } else {
+      data.balanceType = type;
+      connect.event.emit('updateBalance', data);
+    }
   };
 
   let settingBuyHistRecord = (master, newRecord, order, diff, connect, data) => {
@@ -126,11 +132,11 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
       if (err) {
         console.log('There was an error setting the transaction buy record', err);
       } else {
-        data.balanceType = 'actual';
         data.userID = newRecord.get('userID');
-        updateBalanceEmit(connect, data, data.currFrom);
-        data.isExternal = true;
-        updateBalanceEmit(connect, data, data.currTo);
+        data.update = -(+newRecord.get('price') * +diff.get('amount'));
+        updateBalanceEmit(connect, data, data.currFrom, 'actual');
+        data.update = +diff.get('amount');
+        updateBalanceEmit(connect, data, data.currTo, 'actual', true);
         connect.record.getRecord(`rates/${newRecord.get('currFrom')}${newRecord.get('currTo')}`).whenReady((rateRec) => {
           rateRec.set('rate', order.get('price'));
         });
@@ -153,11 +159,11 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
       if (err) {
         console.log('There was an error setting the transaction sell record', err);
       } else {
-        data.balanceType = 'actual';
         data.userID = order.get('userID');
-        updateBalanceEmit(connect, data, data.currFrom);
-        data.isExternal = true;
-        updateBalanceEmit(connect, data, data.currTo);
+        data.update = -(+order.get('price') * +diff.get('amount'));
+        updateBalanceEmit(connect, data, data.currFrom, 'actual');
+        data.update = +diff.get('amount');
+        updateBalanceEmit(connect, data, data.currTo, 'actual', true);
       }
     });
   };
@@ -211,9 +217,7 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
 
         // Update user balance after buy order
         data.update = -(+data.amount * +data.price);
-        data.balanceType = 'available';
-        // console.log('balance type', data.balanceType);
-        connect.event.emit('updateBalance', data);
+        updateBalanceEmit(connect, data, data.currFrom, 'available', false);
 
         // Push record into open buy transactions
         openOrders.whenReady((list) => {

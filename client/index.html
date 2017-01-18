@@ -65,7 +65,7 @@
         buyobj.price = buyPrice.value;
         buyobj.userID = userID.value;
         buyobj.currency = currency.value.toUpperCase();
-        client.event.emit('transactionBuy', buyobj);
+        client.event.emit('transaction', buyobj);
         console.log(buyobj);
         // showBuy.value = buy.value;
         // record.set('buy', buy.value)
@@ -78,7 +78,7 @@
         sellobj.price = sellPrice.value;
         sellobj.userID = userID.value;
         sellobj.currency = currency.value.toUpperCase();
-        client.event.emit('transactionSell', sellobj );
+        client.event.emit('transaction', sellobj );
         console.log(sellobj);
         // showSell.value = sell.value;
         // record.set('sell', sell.value)
