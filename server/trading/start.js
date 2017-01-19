@@ -296,13 +296,13 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
                                 transHist.addEntry(newHistBuyRecord.name);
                                 orderList.removeEntry(order.name);
                                 orderList.removeEntry(newRecord.name);
-                                newRecord.delete();
-                                order.delete();
                                 noDuplicate = false;
                                 // // Alert closed sale
                                 emitClosedBuy(connect, newRecord, order);
                               });
                             });
+                            newRecord.delete();
+                            order.delete();
                           } else if (order.get('amount') < newRecord.get('amount')) {
                             // Supply < Demand
                             diff = newRecord.get('amount') - order.get('amount');
@@ -324,11 +324,11 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
                                   transHist.addEntry(newHistSellRecord.name);
                                   orderList.removeEntry(order.name);
                                   newRecord.set('amount', diff);
-                                  order.delete();
                                   // // Alert closed sale
                                   emitClosedSell(connect, newRecord, order);
                                 });
                               });
+                              order.delete();
                             }
                           } else if (order.get('amount') > newRecord.get('amount')) {
                             // Supply > Demand
@@ -348,11 +348,11 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
                                   transHist.addEntry(newHistBuyRecord.name);
                                   orderList.removeEntry(newRecord.name);
                                   order.set('amount', diff);
-                                  newRecord.delete();
                                   // // Alert closed sale
                                   emitClosedBuy(connect, newRecord, order);
                                 });
                               });
+                              newRecord.delete();
                             }
                           }
                         }
@@ -376,13 +376,13 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
                                 transHist.addEntry(newHistBuyRecord.name);
                                 orderList.removeEntry(order.name);
                                 orderList.removeEntry(newRecord.name);
-                                order.delete();
-                                newRecord.delete();
                                 noDuplicate = false;
                                 // // Alert closed sale
                                 emitClosedBuy(connect, newRecord, order);
                               });
                             });
+                            order.delete();
+                            newRecord.delete();
                           } else if (order.get('amount') < newRecord.get('amount')) {
                             // Supply < Demand
                             diff = newRecord.get('amount') - order.get('amount');
@@ -404,11 +404,11 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
                                   transHist.addEntry(newHistSellRecord.name);
                                   orderList.removeEntry(order.name);
                                   newRecord.set('amount', diff);
-                                  order.delete();
                                   // // Alert closed sale
                                   emitClosedSell(connect, newRecord, order);
                                 });
                               });
+                              order.delete();
                             }
                           } else if (order.get('amount') > newRecord.get('amount')) {
                             // Supply > Demand
@@ -428,11 +428,11 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
                                   transHist.addEntry(newHistBuyRecord.name);
                                   orderList.removeEntry(newRecord.name);
                                   order.set('amount', diff);
-                                  newRecord.delete();
                                   // // Alert closed sale
                                   emitClosedBuy(connect, newRecord, order);
                                 });
                               });
+                              newRecord.delete();
                             }
                           }
                         }
