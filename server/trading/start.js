@@ -143,9 +143,9 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
         console.log('There was an error setting the transaction buy record', err);
       } else {
         data.userID = newRecord.get('userID');
-        data.update = -(+newRecord.get('price') * +diff.get('amount'));
+        data.update = -Math.abs(+newRecord.get('price') * +diff.get('amount'));
         updateBalanceEmit(connect, data, data.currFrom, 'actual');
-        data.update = +diff.get('amount');
+        data.update = Math.abs(+diff.get('amount'));
         updateBalanceEmit(connect, data, data.currTo, 'actual', true);
         connect.record.getRecord(`rates/${newRecord.get('currFrom')}${newRecord.get('currTo')}`).whenReady((rateRec) => {
           rateRec.set('rate', order.get('price'));
@@ -171,9 +171,9 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
         console.log('There was an error setting the transaction sell record', err);
       } else {
         data.userID = order.get('userID');
-        data.update = -(+order.get('price') * +diff.get('amount'));
+        data.update = -Math.abs(+order.get('price') * +diff.get('amount'));
         updateBalanceEmit(connect, data, data.currFrom, 'actual');
-        data.update = +diff.get('amount');
+        data.update = Math.abs(+diff.get('amount'));
         updateBalanceEmit(connect, data, data.currTo, 'actual', true);
       }
     });
@@ -227,7 +227,7 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
         console.log('Open record set without error');
 
         // Update user balance after buy order
-        data.update = -(+data.amount * +data.price);
+        data.update = -Math.abs(+data.amount * +data.price);
         let onSuccess = updateBalanceEmit(connect, data, data.currFrom, 'available', false, newRecord);
 
         // Check if the checkBalance passes
@@ -301,8 +301,11 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
                                 emitClosedBuy(connect, newRecord, order);
                               });
                             });
-                            newRecord.delete();
-                            order.delete();
+                            // console.log('deleting records');
+                            setTimeout(() => {
+                              newRecord.delete();
+                              order.delete();
+                            }, 100);
                           } else if (order.get('amount') < newRecord.get('amount')) {
                             // Supply < Demand
                             diff = newRecord.get('amount') - order.get('amount');
@@ -328,7 +331,10 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
                                   emitClosedSell(connect, newRecord, order);
                                 });
                               });
-                              order.delete();
+                              console.log('deleting record');
+                              setTimeout(() => {
+                                order.delete();
+                              }, 100);
                             }
                           } else if (order.get('amount') > newRecord.get('amount')) {
                             // Supply > Demand
@@ -352,7 +358,10 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
                                   emitClosedBuy(connect, newRecord, order);
                                 });
                               });
-                              newRecord.delete();
+                              console.log('deleting record');
+                              setTimeout(() => {
+                                newRecord.delete();
+                              }, 100);
                             }
                           }
                         }
@@ -381,8 +390,11 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
                                 emitClosedBuy(connect, newRecord, order);
                               });
                             });
-                            order.delete();
-                            newRecord.delete();
+                            console.log('deleting records');
+                            setTimeout(() => {
+                              newRecord.delete();
+                              order.delete();
+                            }, 100);
                           } else if (order.get('amount') < newRecord.get('amount')) {
                             // Supply < Demand
                             diff = newRecord.get('amount') - order.get('amount');
@@ -408,7 +420,9 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
                                   emitClosedSell(connect, newRecord, order);
                                 });
                               });
-                              order.delete();
+                              setTimeout(() => {
+                                order.delete();
+                              }, 100);
                             }
                           } else if (order.get('amount') > newRecord.get('amount')) {
                             // Supply > Demand
@@ -432,7 +446,10 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
                                   emitClosedBuy(connect, newRecord, order);
                                 });
                               });
-                              newRecord.delete();
+                              console.log('deleting record');
+                              setTimeout(() => {
+                                newRecord.delete();
+                              }, 100);
                             }
                           }
                         }
@@ -444,7 +461,9 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
             }
           });
         } else {
-          newRecord.delete();
+          setTimeout(() => {
+            newRecord.delete();
+          }, 100);
         }
       }
     });
