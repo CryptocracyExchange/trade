@@ -191,7 +191,8 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
       type: 'buy',
       amount: newRecord.get('amount'),
       from: order.get('userID'),
-      originalId: newRecord.name,
+      currFrom: newRecord.get('currFrom'),
+      currTo: newRecord.get('currTo'),
       date: newRecord.get('date')
     });
   };
@@ -204,7 +205,8 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
       type: 'sell',
       amount: order.get('amount'),
       to: newRecord.get('userID'),
-      originalId: order.name,
+      currFrom: order.get('currFrom'),
+      currTo: order.get('currTo'),
       date: newRecord.get('date')
     });
   };
