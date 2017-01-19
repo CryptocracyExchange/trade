@@ -84,6 +84,7 @@ Provider.prototype._ready = function () {
 // Buy Transaction Listener
 Provider.prototype._initTransaction = function (openOrders, transactionHistory) {
   this._deepstreamClient.event.subscribe('transaction', (data) => {
+    console.log('initTrans', data);
     let options = {
       userID: data.userID,
       currency: data.currFrom,
@@ -91,13 +92,16 @@ Provider.prototype._initTransaction = function (openOrders, transactionHistory) 
       balanceType: 'available'
     };
     this._deepstreamClient.event.emit('checkBalance', options);
-    this._deepstreamClient.event.subscribe('returnBalance', (balance) => {
-      if (balance.balance && (balance.balance >= data.amount * data.price)) {
-        console.log('balance returned');
-        this._deepstreamClient.event.unsubscribe('returnBalance');
+    this._deepstreamClient.record.snapshot(`balances/${data.userID}`, (err, record) => {
+      if (err) {
+        console.log(err);
+      }
+      // console.log('snap record', record);
+      let rec = record ? record[data.currFrom].available : null;
+      if ( rec && (rec >= data.amount * data.price)) {
         this._buy(this._deepstreamClient, data, openOrders, transactionHistory);
       } else {
-        console.log('NOT ENOUGH MONEY!');
+        console.log('YOU BROKE!');
       }
     });
   });
@@ -208,6 +212,7 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
   // Creates unique ID
   let unique = connect.getUid();
   // Creates new buy record
+
   const buy = connect.record.getRecord(`open/${unique}`);
   let newToday = new Date();
   buy.whenReady((newRecord) => {
@@ -265,7 +270,7 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
           openOrders.whenReady((orderList) => {
             // Get array of open sell orders
             let orders = orderList.getEntries();
-            var diff, noDuplicate = true;
+            var diff, noDuplicate = true, breakOut = false;
             // Iterate through every open order in the openOrders list
             for (let n = 0; n < orders.length; n++) {
               // Get each record info
@@ -288,8 +293,6 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
                               newSellHist.whenReady((newHistSellRecord) => {
                                 // Supply == Demand
                                 console.log('sell amount = buy amount');
-                                newRecord.set('amount', newRecord.get('amount'));
-                                order.set('amount', newRecord.get('amount'));
                                 settingBuyHistRecord(newHistBuyRecord, newRecord, order, newRecord, connect, data);
                                 settingSellHistRecord(newHistSellRecord, newRecord, order, order, connect, data);
                                 transHist.addEntry(newHistSellRecord.name);
@@ -297,15 +300,13 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
                                 orderList.removeEntry(order.name);
                                 orderList.removeEntry(newRecord.name);
                                 noDuplicate = false;
+                                breakOut = true;
                                 // // Alert closed sale
                                 emitClosedBuy(connect, newRecord, order);
                               });
                             });
-                            // console.log('deleting records');
-                            // setTimeout(() => {
                             //   newRecord.delete();
                             //   order.delete();
-                            // }, 100);
                           } else if (order.get('amount') < newRecord.get('amount')) {
                             // Supply < Demand
                             diff = newRecord.get('amount') - order.get('amount');
@@ -331,10 +332,7 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
                                   emitClosedSell(connect, newRecord, order);
                                 });
                               });
-                              // console.log('deleting record');
-                              // setTimeout(() => {
                               //   order.delete();
-                              // }, 100);
                             }
                           } else if (order.get('amount') > newRecord.get('amount')) {
                             // Supply > Demand
@@ -358,10 +356,7 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
                                   emitClosedBuy(connect, newRecord, order);
                                 });
                               });
-                              // console.log('deleting record');
-                              // setTimeout(() => {
                               //   newRecord.delete();
-                              // }, 100);
                             }
                           }
                         }
@@ -377,8 +372,6 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
                               newSellHist.whenReady((newHistSellRecord) => {
                                 // Supply == Demand
                                 console.log('sell amount = buy amount');
-                                newRecord.set('amount', newRecord.get('amount'));
-                                order.set('amount', newRecord.get('amount'));
                                 settingBuyHistRecord(newHistBuyRecord, newRecord, order, newRecord, connect, data);
                                 settingSellHistRecord(newHistSellRecord, newRecord, order, order, connect, data);
                                 transHist.addEntry(newHistSellRecord.name);
@@ -386,15 +379,13 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
                                 orderList.removeEntry(order.name);
                                 orderList.removeEntry(newRecord.name);
                                 noDuplicate = false;
+                                breakOut = true;
                                 // // Alert closed sale
                                 emitClosedBuy(connect, newRecord, order);
                               });
                             });
-                            // console.log('deleting records');
-                            // setTimeout(() => {
                               // newRecord.delete();
                               // order.delete();
-                            // }, 100);
                           } else if (order.get('amount') < newRecord.get('amount')) {
                             // Supply < Demand
                             diff = newRecord.get('amount') - order.get('amount');
@@ -420,9 +411,7 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
                                   emitClosedSell(connect, newRecord, order);
                                 });
                               });
-                              // setTimeout(() => {
                                 // order.delete();
-                              // }, 100);
                             }
                           } else if (order.get('amount') > newRecord.get('amount')) {
                             // Supply > Demand
@@ -446,10 +435,7 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
                                   emitClosedBuy(connect, newRecord, order);
                                 });
                               });
-                              // console.log('deleting record');
-                              // setTimeout(() => {
                                 // newRecord.delete();
-                              // }, 100);
                             }
                           }
                         }
@@ -458,16 +444,19 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
                   });
                 }
               });
+              if(breakOut) {
+                console.log('breakout!');
+                return;
+              }
             }
           });
         } else {
-          // setTimeout(() => {
-            newRecord.delete();
-          // }, 100);
+          newRecord.delete();
         }
       }
     });
   });
+  console.log('buying');
 };
 
 module.exports = Provider;
