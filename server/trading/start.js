@@ -302,10 +302,10 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
                               });
                             });
                             // console.log('deleting records');
-                            setTimeout(() => {
-                              newRecord.delete();
-                              order.delete();
-                            }, 100);
+                            // setTimeout(() => {
+                            //   newRecord.delete();
+                            //   order.delete();
+                            // }, 100);
                           } else if (order.get('amount') < newRecord.get('amount')) {
                             // Supply < Demand
                             diff = newRecord.get('amount') - order.get('amount');
@@ -331,10 +331,10 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
                                   emitClosedSell(connect, newRecord, order);
                                 });
                               });
-                              console.log('deleting record');
-                              setTimeout(() => {
-                                order.delete();
-                              }, 100);
+                              // console.log('deleting record');
+                              // setTimeout(() => {
+                              //   order.delete();
+                              // }, 100);
                             }
                           } else if (order.get('amount') > newRecord.get('amount')) {
                             // Supply > Demand
@@ -358,10 +358,10 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
                                   emitClosedBuy(connect, newRecord, order);
                                 });
                               });
-                              console.log('deleting record');
-                              setTimeout(() => {
-                                newRecord.delete();
-                              }, 100);
+                              // console.log('deleting record');
+                              // setTimeout(() => {
+                              //   newRecord.delete();
+                              // }, 100);
                             }
                           }
                         }
@@ -390,11 +390,11 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
                                 emitClosedBuy(connect, newRecord, order);
                               });
                             });
-                            console.log('deleting records');
-                            setTimeout(() => {
-                              newRecord.delete();
-                              order.delete();
-                            }, 100);
+                            // console.log('deleting records');
+                            // setTimeout(() => {
+                              // newRecord.delete();
+                              // order.delete();
+                            // }, 100);
                           } else if (order.get('amount') < newRecord.get('amount')) {
                             // Supply < Demand
                             diff = newRecord.get('amount') - order.get('amount');
@@ -420,9 +420,9 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
                                   emitClosedSell(connect, newRecord, order);
                                 });
                               });
-                              setTimeout(() => {
-                                order.delete();
-                              }, 100);
+                              // setTimeout(() => {
+                                // order.delete();
+                              // }, 100);
                             }
                           } else if (order.get('amount') > newRecord.get('amount')) {
                             // Supply > Demand
@@ -446,10 +446,10 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
                                   emitClosedBuy(connect, newRecord, order);
                                 });
                               });
-                              console.log('deleting record');
-                              setTimeout(() => {
-                                newRecord.delete();
-                              }, 100);
+                              // console.log('deleting record');
+                              // setTimeout(() => {
+                                // newRecord.delete();
+                              // }, 100);
                             }
                           }
                         }
@@ -461,9 +461,9 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
             }
           });
         } else {
-          setTimeout(() => {
+          // setTimeout(() => {
             newRecord.delete();
-          }, 100);
+          // }, 100);
         }
       }
     });
