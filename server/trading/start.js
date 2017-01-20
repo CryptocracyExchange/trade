@@ -151,7 +151,25 @@ Provider.prototype._buy = function (connect, data, openOrders, transactionHistor
         updateBalanceEmit(connect, data, data.currFrom, 'actual');
         data.update = Math.abs(+diff.get('amount'));
         updateBalanceEmit(connect, data, data.currTo, 'actual', true);
+
+        const pairName = ["BTCLTC", "DOGEBTC", "DOGELTC"].filter((pair) => {
+          const map = {};
+          if (pair[0] === 'D') {
+            map.DOGE = true;
+            if (pair[4] === 'B') {
+              map.BTC = true;
+            } else {
+              map.LTC = true;
+            }
+          } else {
+            map.BTC = true;
+            map.LTC = true;
+          }
+          return map.hasOwnProperty(newRecord.get('currFrom')) && map.hasOwnProperty(newRecord.get('currTo'));
+        })[0];
         connect.record.getRecord(`rates/${newRecord.get('currFrom')}${newRecord.get('currTo')}`).whenReady((rateRec) => {
+          // console.log('rate price', order.get('price'));
+          connect.event.emit(`rate/${pairName}`, order.get('price'));
           rateRec.set('rate', order.get('price'));
         });
       }
